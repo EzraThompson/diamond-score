@@ -135,7 +135,7 @@ function TabBar({
   showPbp: boolean;
 }) {
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'linescore', label: 'Linescore' },
+    { key: 'linescore', label: 'Gamecast' },
     { key: 'boxscore', label: 'Box Score' },
     ...(showPbp ? [{ key: 'pbp' as TabKey, label: 'Plays' }] : []),
   ];
@@ -229,6 +229,10 @@ function LinescoreTab({ detail }: { detail: GameDetail }) {
         (detail.runnersOn && (detail.runnersOn.first || detail.runnersOn.second || detail.runnersOn.third))
       ) && (
         <LiveSituation detail={detail} />
+      )}
+
+      {detail.status === 'live' && (detail.plays?.length ?? 0) > 0 && (
+        <RecentPlaysTicker plays={detail.plays!} />
       )}
     </div>
   );
@@ -434,6 +438,65 @@ function BoxScoreTab({ detail }: { detail: GameDetail }) {
           {detail.pitching?.home && <PitchingTable label={homeLabel} pitchers={detail.pitching.home} />}
         </>
       )}
+    </div>
+  );
+}
+
+// ── Recent plays ticker ────────────────────────────────────────────────
+
+const TICKER_EVENT_COLORS: Record<string, string> = {
+  'Home Run':             'text-yellow-500',
+  'Triple':               'text-accent',
+  'Double':               'text-accent-light',
+  'Single':               'text-gray-700',
+  'Walk':                 'text-blue-500',
+  'Strikeout':            'text-red-400',
+  'Strikeout - Swinging': 'text-red-400',
+  'Strikeout - Looking':  'text-red-400',
+};
+
+function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
+  if (!plays.length) return null;
+  const recent = [...plays].slice(-5).reverse();
+
+  return (
+    <div className="mt-3 bg-surface-50 rounded-xl border border-surface-200 overflow-hidden">
+      <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1.5">
+        <span className="relative flex items-center justify-center w-2 h-2">
+          <span className="absolute inline-flex w-full h-full rounded-full bg-live opacity-40 animate-ping" />
+          <span className="relative w-1.5 h-1.5 rounded-full bg-live" />
+        </span>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          Recent Plays
+        </p>
+      </div>
+      <div className="divide-y divide-surface-100">
+        {recent.map((play) => {
+          const halfLabel = play.half === 'top' ? '▲' : '▼';
+          const colorClass = TICKER_EVENT_COLORS[play.event] ?? 'text-gray-600';
+          return (
+            <div key={play.id} className="flex items-start gap-2 px-3 py-2">
+              <span className="text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0 mt-0.5 w-8">
+                {halfLabel}{play.inning}
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className={`text-[11px] font-bold ${colorClass}`}>{play.event}</span>
+                {play.rbi > 0 && (
+                  <span className="ml-1 text-[10px] text-yellow-500 font-semibold">{play.rbi} RBI</span>
+                )}
+                <p className="text-[10px] text-gray-400 truncate leading-tight mt-0.5">
+                  {play.description}
+                </p>
+              </div>
+              {(play.awayScore > 0 || play.homeScore > 0) && (
+                <span className="text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0 mt-0.5">
+                  {play.awayScore}–{play.homeScore}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

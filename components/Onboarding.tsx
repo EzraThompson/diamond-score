@@ -24,9 +24,9 @@ export default function Onboarding() {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-surface-50 rounded-2xl w-full max-w-sm shadow-2xl border border-surface-200">
+      <div className="bg-surface-50 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl border border-surface-200">
         {/* Header */}
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-5 pt-5 pb-3 flex-shrink-0">
           <div className="text-2xl mb-1">&#9918;</div>
           <h2 className="text-base font-extrabold text-gray-900">
             Welcome to DiamondScore
@@ -36,13 +36,13 @@ export default function Onboarding() {
           </p>
         </div>
 
-        {/* Team picker */}
-        <div className="px-5 pb-4">
+        {/* Team picker — scrolls if content overflows on small screens */}
+        <div className="px-5 pb-4 overflow-y-auto flex-1 min-h-0">
           <TeamPicker selectedTeams={favoriteTeams} onToggle={toggleTeam} />
         </div>
 
-        {/* Actions */}
-        <div className="px-5 pb-5 flex gap-2">
+        {/* Actions — always visible at bottom */}
+        <div className="px-5 pb-5 flex gap-2 flex-shrink-0">
           <button
             onClick={finish}
             className="flex-1 py-2.5 text-sm font-semibold bg-accent text-white rounded-xl hover:bg-accent-light transition-colors"

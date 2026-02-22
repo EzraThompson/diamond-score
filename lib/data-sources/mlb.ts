@@ -89,7 +89,15 @@ interface MLBLinescore {
 
 interface MLBLiveFeed {
   liveData: {
-    linescore: MLBLinescore;
+    linescore: MLBLinescore & {
+      offense?: {
+        first?: { id: number; fullName: string };
+        second?: { id: number; fullName: string };
+        third?: { id: number; fullName: string };
+        batter?: { id: number; fullName: string };
+        onDeck?: { id: number; fullName: string };
+      };
+    };
     plays: {
       currentPlay?: {
         matchup: {
@@ -180,7 +188,16 @@ interface MLBFullLiveFeed {
         runners: { movement: { start?: string; end?: string; isOut?: boolean } }[];
       };
     };
-    linescore: MLBLinescore;
+    linescore: MLBLinescore & {
+      offense?: {
+        first?: { id: number; fullName: string };
+        second?: { id: number; fullName: string };
+        third?: { id: number; fullName: string };
+        batter?: { id: number; fullName: string };
+        onDeck?: { id: number; fullName: string };
+        pitcher?: { id: number; fullName: string };
+      };
+    };
     boxscore: {
       teams: {
         home: MLBBoxscoreTeam;
@@ -339,6 +356,20 @@ function parseRunners(play: MLBLiveFeed['liveData']['plays']['currentPlay']): Ru
   return runners;
 }
 
+// Use linescore.offense for runner state — stays accurate during defensive subs
+// and pitching changes where currentPlay.runners is empty.
+function parseRunnersFromLinescore(offense?: {
+  first?: { id: number; fullName: string };
+  second?: { id: number; fullName: string };
+  third?: { id: number; fullName: string };
+}): RunnersOn {
+  return {
+    first: !!offense?.first,
+    second: !!offense?.second,
+    third: !!offense?.third,
+  };
+}
+
 function toPlayer(p?: { id: number; fullName: string }): PlayerInfo | undefined {
   if (!p) return undefined;
   return { id: p.id, name: p.fullName };
@@ -452,13 +483,15 @@ async function enrichLiveGame(game: Game): Promise<void> {
       strikes: play.count.strikes,
       outs: play.count.outs,
     };
-    game.runnersOn = parseRunners(play);
     game.currentBatter = toPlayer(play.matchup.batter);
     game.currentPitcher = toPlayer(play.matchup.pitcher);
   }
 
   // Update linescore/outs from live feed (more current than schedule hydrate)
   const ls = feed.liveData.linescore;
+  // Use linescore.offense for runners — correct even during defensive subs/pitching changes
+  // (currentPlay.runners is empty for substitution events, incorrectly wiping baserunners)
+  game.runnersOn = parseRunnersFromLinescore(ls.offense);
   game.currentInning = ls.currentInning;
   game.inningHalf = mapInningHalf(ls);
   game.outs = ls.outs;
@@ -560,13 +593,16 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     awayColor: TEAM_COLORS[gameData.teams.away.id],
   };
 
+  // Use linescore.offense for runners — stays accurate during defensive subs/pitching changes
+  detail.runnersOn = parseRunnersFromLinescore(ls.offense);
+  detail.onDeckBatter = toPlayer(ls.offense?.onDeck);
+
   if (cp) {
     detail.count = {
       balls: cp.count.balls,
       strikes: cp.count.strikes,
       outs: cp.count.outs,
     };
-    detail.runnersOn = parseRunners(cp);
     detail.currentBatter = toPlayer(cp.matchup.batter);
     detail.currentPitcher = toPlayer(cp.matchup.pitcher);
     detail.lastPlayDescription = cp.result.description;
