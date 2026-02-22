@@ -17,6 +17,7 @@ import type {
   PlayEvent,
   PlayerInfo,
   RunnersOn,
+  ScheduleNavGame,
   Standing,
   Team,
 } from '../types';
@@ -56,6 +57,7 @@ interface MLBGame {
     away: MLBGameTeam;
   };
   linescore?: MLBLinescore;
+  broadcasts?: { name: string }[];
 }
 
 interface MLBGameTeam {
@@ -66,6 +68,7 @@ interface MLBGameTeam {
     abbreviation?: string;
   };
   leagueRecord?: { wins: number; losses: number; pct: string };
+  probablePitcher?: { id: number; fullName: string };
 }
 
 interface MLBLinescore {
@@ -173,6 +176,7 @@ interface MLBFullLiveFeed {
       away?: { id: number; fullName: string };
     };
     venue?: { name: string };
+    datetime?: { dateTime?: string; originalDate?: string };
   };
   liveData: {
     plays: {
@@ -385,7 +389,7 @@ export async function fetchScheduleGames(
   if (cached) return cached;
 
   const data = await mlbFetch<MLBScheduleResponse>(
-    `${MLB_API}/schedule?sportId=${sportId}&date=${date}&hydrate=linescore,team`
+    `${MLB_API}/schedule?sportId=${sportId}&date=${date}&hydrate=linescore,team,probablePitcher,broadcasts`
   );
 
   if (!data.dates?.length) return [];
@@ -414,6 +418,9 @@ export async function fetchScheduleGames(
         awayHits: ls?.teams?.away.hits,
         homeErrors: ls?.teams?.home.errors,
         awayErrors: ls?.teams?.away.errors,
+        homeProbablePitcher: toPlayer(g.teams.home.probablePitcher),
+        awayProbablePitcher: toPlayer(g.teams.away.probablePitcher),
+        tvNetworks: g.broadcasts?.map((b) => b.name),
       };
 
       if (status === 'live') {
@@ -531,6 +538,59 @@ export async function getMLBStandings(season: number): Promise<Standing[]> {
 }
 
 /**
+ * Fetch prev/next games for a team around a given game.
+ * Used to power prev/next navigation in the game detail view.
+ * Cached 5 minutes.
+ */
+async function getMLBTeamScheduleWindow(
+  teamId: number,
+  gamePk: number,
+  gameDate: string,
+): Promise<{ prev: ScheduleNavGame | null; next: ScheduleNavGame | null }> {
+  const cacheKey = `mlb:teamwindow:${teamId}:${gamePk}`;
+  const cached = gameCache.get<{ prev: ScheduleNavGame | null; next: ScheduleNavGame | null }>(cacheKey);
+  if (cached) return cached;
+
+  // ±30 day window around the game date
+  const center = new Date(gameDate + 'T12:00:00Z');
+  const startMs = center.getTime() - 30 * 24 * 60 * 60 * 1000;
+  const endMs   = center.getTime() + 30 * 24 * 60 * 60 * 1000;
+  const startStr = new Date(startMs).toISOString().slice(0, 10);
+  const endStr   = new Date(endMs).toISOString().slice(0, 10);
+
+  const data = await mlbFetch<MLBScheduleResponse>(
+    `${MLB_API}/schedule?teamId=${teamId}&startDate=${startStr}&endDate=${endStr}&sportId=1&hydrate=team`,
+  );
+
+  const allGames: ScheduleNavGame[] = [];
+
+  for (const dateEntry of data.dates ?? []) {
+    for (const g of dateEntry.games) {
+      const isHome = g.teams.home.team.id === teamId;
+      const opponentTeam = isHome ? g.teams.away.team : g.teams.home.team;
+      allGames.push({
+        id: g.gamePk,
+        date: dateEntry.date,
+        opponent: opponentTeam.abbreviation ?? opponentTeam.name.slice(0, 3).toUpperCase(),
+        homeOrAway: isHome ? 'home' : 'away',
+        status: mapStatus(g.status),
+      });
+    }
+  }
+
+  allGames.sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+
+  const idx = allGames.findIndex((g) => g.id === gamePk);
+  const result = {
+    prev: idx > 0 ? allGames[idx - 1] : null,
+    next: idx >= 0 && idx < allGames.length - 1 ? allGames[idx + 1] : null,
+  };
+
+  gameCache.set(cacheKey, result, 300);
+  return result;
+}
+
+/**
  * Fetch full game detail for the game detail page.
  * Returns box score, play-by-play, and current live situation.
  * Cached 30s for live games, 5min for finished/scheduled.
@@ -562,7 +622,7 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     id: gamePk,
     league: MLB_LEAGUE,
     status,
-    scheduledTime: '',
+    scheduledTime: feed.gameData.datetime?.dateTime ?? feed.gameData.datetime?.originalDate ?? '',
     homeTeam,
     awayTeam,
     homeScore: ls.teams?.home.runs ?? 0,
@@ -606,6 +666,25 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     away: parsePitchers(bsTeams.away),
   };
   detail.plays = parsePlays(liveData.plays.allPlays);
+
+  // Fetch prev/next games for both teams (MLB-only, parallel)
+  const gameDate = feed.gameData.datetime?.originalDate
+    ?? feed.gameData.datetime?.dateTime?.slice(0, 10)
+    ?? new Date().toISOString().slice(0, 10);
+
+  const [homeNav, awayNav] = await Promise.all([
+    getMLBTeamScheduleWindow(gameData.teams.home.id, gamePk, gameDate).catch(() => null),
+    getMLBTeamScheduleWindow(gameData.teams.away.id, gamePk, gameDate).catch(() => null),
+  ]);
+
+  if (homeNav) {
+    if (homeNav.prev) detail.prevGameHome = homeNav.prev;
+    if (homeNav.next) detail.nextGameHome = homeNav.next;
+  }
+  if (awayNav) {
+    if (awayNav.prev) detail.prevGameAway = awayNav.prev;
+    if (awayNav.next) detail.nextGameAway = awayNav.next;
+  }
 
   const ttl = status === 'live' ? 30 : 300;
   gameCache.set(cacheKey, detail, ttl);

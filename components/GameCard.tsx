@@ -330,6 +330,9 @@ export default function GameCard({ game }: { game: Game }) {
         )}
       </div>
 
+      {/* Probable pitchers + TV for scheduled games */}
+      <ScheduledInfo game={game} />
+
       {/* Spoiler tap hint */}
       {spoilerActive && (
         <p
@@ -358,6 +361,38 @@ export default function GameCard({ game }: { game: Game }) {
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Scheduled game info (probable pitchers + TV) ──────────────────────
+
+function ScheduledInfo({ game }: { game: Game }) {
+  if (game.status !== 'scheduled') return null;
+
+  const hasPitchers = game.homeProbablePitcher || game.awayProbablePitcher;
+  const hasTV = game.tvNetworks?.length;
+
+  if (!hasPitchers && !hasTV) return null;
+
+  const awayLast = game.awayProbablePitcher?.name.split(' ').pop() ?? 'TBD';
+  const homeLast = game.homeProbablePitcher?.name.split(' ').pop() ?? 'TBD';
+
+  return (
+    <div className="mt-1.5 pt-1.5 border-t border-surface-100 flex items-center gap-2 flex-wrap">
+      {hasPitchers && (
+        <span className="text-[10px] text-gray-400">
+          P: {awayLast} vs. {homeLast}
+        </span>
+      )}
+      {hasPitchers && hasTV && (
+        <span className="text-[10px] text-surface-300">|</span>
+      )}
+      {hasTV && (
+        <span className="text-[10px] text-gray-400">
+          {game.tvNetworks!.slice(0, 2).join(', ')}
+        </span>
       )}
     </div>
   );

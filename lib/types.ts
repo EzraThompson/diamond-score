@@ -47,6 +47,14 @@ export interface PlayerInfo {
   name: string;
 }
 
+export interface ScheduleNavGame {
+  id: number;
+  date: string;          // YYYY-MM-DD
+  opponent: string;      // abbreviation
+  homeOrAway: 'home' | 'away';
+  status: GameStatus;
+}
+
 export interface Game {
   id: number;
   league: League;
@@ -71,6 +79,9 @@ export interface Game {
   awayHits?: number;
   homeErrors?: number;
   awayErrors?: number;
+  homeProbablePitcher?: PlayerInfo;
+  awayProbablePitcher?: PlayerInfo;
+  tvNetworks?: string[];
 }
 
 export interface Standing {
@@ -134,6 +145,10 @@ export interface GameDetail extends Game {
   homeColor?: string;
   awayColor?: string;
   onDeckBatter?: PlayerInfo;
+  prevGameHome?: ScheduleNavGame;
+  nextGameHome?: ScheduleNavGame;
+  prevGameAway?: ScheduleNavGame;
+  nextGameAway?: ScheduleNavGame;
 }
 
 // ── Legacy aliases (used by existing components) ────────────────────
