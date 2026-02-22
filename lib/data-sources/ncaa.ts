@@ -14,12 +14,14 @@
 
 import { gameCache } from '../cache';
 import type {
+  BatterLine,
   Game,
   GameDetail,
   GameStatus,
   InningHalf,
   League,
   LinescoreInning,
+  PitcherLine,
   PlayerInfo,
   RunnersOn,
   Team,
@@ -68,6 +70,7 @@ interface ESPNCompetitor {
   score?: string;
   curatedRank?: { current: number }; // 99999 when unranked
   linescores?: { value: number; period: number }[];
+  records?: { name: string; summary: string }[];
   hits?: number;
   errors?: number;
 }
@@ -116,6 +119,59 @@ function mapInningHalf(detail: string): InningHalf | undefined {
   return undefined;
 }
 
+function parseRecord(records?: { name: string; summary: string }[]): { wins?: number; losses?: number } {
+  if (!records?.length) return {};
+  // ESPN uses 'overall' for most sports but 'total' for some college sports.
+  // Fall back to the first available entry so we never silently drop a record.
+  const entry =
+    records.find((r) => r.name === 'overall') ??
+    records.find((r) => r.name === 'total') ??
+    records[0];
+  if (!entry?.summary) return {};
+  const match = entry.summary.match(/^(\d+)-(\d+)/);
+  if (!match) return {};
+  return { wins: parseInt(match[1], 10), losses: parseInt(match[2], 10) };
+}
+
+/**
+ * Fetches the current-season W/L record for a single ESPN team ID directly
+ * from the team endpoint. Used as a fallback when the scoreboard response
+ * omits records for a team. Cached 1 hour.
+ */
+async function fetchTeamRecord(teamId: number): Promise<{ wins?: number; losses?: number }> {
+  const cacheKey = `ncaa:record:${teamId}`;
+  const cached = gameCache.get<{ wins?: number; losses?: number }>(cacheKey);
+  if (cached !== undefined) return cached;
+
+  try {
+    const res = await fetch(`${ESPN_BASE}/teams/${teamId}`, { cache: 'no-store' });
+    if (!res.ok) return {};
+    const data = (await res.json()) as {
+      team?: {
+        record?: {
+          items?: { type: { name: string }; summary?: string; wins?: number; losses?: number }[];
+        };
+      };
+    };
+    const items = data.team?.record?.items ?? [];
+    const item =
+      items.find((i) => i.type?.name === 'total' || i.type?.name === 'overall') ?? items[0];
+    if (!item) return {};
+
+    let wins   = item.wins;
+    let losses = item.losses;
+    if (wins === undefined && item.summary) {
+      const m = item.summary.match(/^(\d+)-(\d+)/);
+      if (m) { wins = parseInt(m[1], 10); losses = parseInt(m[2], 10); }
+    }
+    const result = { wins, losses };
+    gameCache.set(cacheKey, result, 3600);
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 function parseTeam(c: ESPNCompetitor): Team {
   const rank = c.curatedRank?.current;
   return {
@@ -125,6 +181,7 @@ function parseTeam(c: ESPNCompetitor): Team {
     logoUrl: c.team.logo,
     primaryColor: c.team.color ? `#${c.team.color}` : undefined,
     rank: rank && rank <= 25 ? rank : undefined,
+    ...parseRecord(c.records),
   };
 }
 
@@ -186,6 +243,7 @@ interface ESPNSummaryCompetitor {
   team: ESPNSummaryCompetitorTeam;
   score?: string;
   rank?: number;   // AP rank directly (no curatedRank wrapper in summary)
+  records?: { name: string; summary: string }[];
   hits?: number;
   errors?: number;
 }
@@ -221,6 +279,29 @@ interface ESPNRoster {
   roster?: ESPNRosterEntry[];
 }
 
+// ── ESPN Boxscore types ──────────────────────────────────────────────
+
+interface ESPNBoxscoreAthlete {
+  athlete: { id: string; displayName: string };
+  stats: string[];
+}
+
+interface ESPNBoxscoreStatistic {
+  name: string;    // "batting" | "pitching"
+  labels: string[];
+  athletes: ESPNBoxscoreAthlete[];
+}
+
+interface ESPNBoxscoreTeamEntry {
+  team: { id: string };
+  homeAway?: 'home' | 'away';
+  statistics: ESPNBoxscoreStatistic[];
+}
+
+interface ESPNBoxscore {
+  players?: ESPNBoxscoreTeamEntry[];
+}
+
 interface ESPNSummary {
   header?: {
     competitions?: ESPNSummaryCompetition[];
@@ -230,6 +311,68 @@ interface ESPNSummary {
   };
   plays?: ESPNPlay[];
   rosters?: ESPNRoster[];
+  boxscore?: ESPNBoxscore;
+}
+
+// ── Boxscore parsers ──────────────────────────────────────────────────
+
+function idx(labels: string[], label: string): number {
+  return labels.indexOf(label);
+}
+
+function num(stats: string[], i: number): number {
+  return i >= 0 ? parseInt(stats[i] ?? '') || 0 : 0;
+}
+
+function parseBattingLines(stat: ESPNBoxscoreStatistic): BatterLine[] {
+  const labels = stat.labels;
+  const abI  = idx(labels, 'AB');
+  const rI   = idx(labels, 'R');
+  const hI   = idx(labels, 'H');
+  const rbiI = idx(labels, 'RBI');
+  const bbI  = idx(labels, 'BB');
+  const soI  = idx(labels, 'SO');
+  const avgI = idx(labels, 'AVG');
+
+  return stat.athletes
+    .filter((a) => a.stats.length > 0)
+    .map((a) => ({
+      id:       parseInt(a.athlete.id) || 0,
+      name:     a.athlete.displayName,
+      position: '',
+      atBats:   num(a.stats, abI),
+      runs:     num(a.stats, rI),
+      hits:     num(a.stats, hI),
+      rbi:      num(a.stats, rbiI),
+      bb:       num(a.stats, bbI),
+      so:       num(a.stats, soI),
+      avg:      avgI >= 0 ? (a.stats[avgI] ?? '.---') : '.---',
+    }));
+}
+
+function parsePitchingLines(stat: ESPNBoxscoreStatistic): PitcherLine[] {
+  const labels = stat.labels;
+  const ipI  = idx(labels, 'IP');
+  const hI   = idx(labels, 'H');
+  const rI   = idx(labels, 'R');
+  const erI  = idx(labels, 'ER');
+  const bbI  = idx(labels, 'BB');
+  const soI  = idx(labels, 'SO');
+  const eraI = idx(labels, 'ERA');
+
+  return stat.athletes
+    .filter((a) => a.stats.length > 0)
+    .map((a) => ({
+      id:   parseInt(a.athlete.id) || 0,
+      name: a.athlete.displayName,
+      ip:   ipI  >= 0 ? (a.stats[ipI]  ?? '0')    : '0',
+      hits: num(a.stats, hI),
+      runs: num(a.stats, rI),
+      er:   num(a.stats, erI),
+      bb:   num(a.stats, bbI),
+      so:   num(a.stats, soI),
+      era:  eraI >= 0 ? (a.stats[eraI] ?? '-.--') : '-.--',
+    }));
 }
 
 function parseSummaryTeam(c: ESPNSummaryCompetitor): Team {
@@ -243,6 +386,7 @@ function parseSummaryTeam(c: ESPNSummaryCompetitor): Team {
     logoUrl: logo,
     primaryColor: c.team.color ? `#${c.team.color}` : undefined,
     rank: c.rank && c.rank <= 25 ? c.rank : undefined,
+    ...parseRecord(c.records),
   };
 }
 
@@ -405,6 +549,34 @@ export async function getNCAAGames(date: string): Promise<Game[]> {
     games.push(game);
   }
 
+  // ── Fallback: batch-fetch records for teams the scoreboard didn't include ──
+  // ESPN's scoreboard omits records for some teams (untracked schools, 0-0 teams,
+  // or when using 'total' vs 'overall' naming wasn't enough). Deduplicate by team
+  // ID and fetch only what's still missing.
+  const missingTeamIds = new Set<number>();
+  for (const g of games) {
+    if (g.homeTeam.wins === undefined) missingTeamIds.add(g.homeTeam.id);
+    if (g.awayTeam.wins === undefined) missingTeamIds.add(g.awayTeam.id);
+  }
+
+  if (missingTeamIds.size > 0) {
+    const fetched = await Promise.all(
+      Array.from(missingTeamIds).map((id) => fetchTeamRecord(id).then((r) => [id, r] as const)),
+    );
+    const recordMap = new Map(fetched);
+
+    for (const g of games) {
+      if (g.homeTeam.wins === undefined) {
+        const r = recordMap.get(g.homeTeam.id);
+        if (r?.wins !== undefined) g.homeTeam = { ...g.homeTeam, ...r };
+      }
+      if (g.awayTeam.wins === undefined) {
+        const r = recordMap.get(g.awayTeam.id);
+        if (r?.wins !== undefined) g.awayTeam = { ...g.awayTeam, ...r };
+      }
+    }
+  }
+
   // Sort: live → final → scheduled → postponed
   games.sort(
     (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
@@ -523,6 +695,42 @@ export async function getNCAAGameDetail(id: number): Promise<GameDetail> {
       if (matchup.currentPitcher) detail.currentPitcher = matchup.currentPitcher;
       if (matchup.currentBatter)  detail.currentBatter  = matchup.currentBatter;
       if (matchup.onDeckBatter)   detail.onDeckBatter   = matchup.onDeckBatter;
+    }
+  }
+
+  // ── Box score from ESPN summary (works for live and final) ──────────
+  // ESPN's summary endpoint includes a `boxscore.players` array with per-player
+  // batting and pitching lines.  Available for both live and completed games.
+  const boxscorePlayers = data.boxscore?.players ?? [];
+  if (boxscorePlayers.length > 0) {
+    const homeId = String(home.team.id);
+    let homeBatting:  BatterLine[]  = [];
+    let homePitching: PitcherLine[] = [];
+    let awayBatting:  BatterLine[]  = [];
+    let awayPitching: PitcherLine[] = [];
+
+    for (const teamEntry of boxscorePlayers) {
+      const teamId = String(teamEntry.team.id);
+      const isHome = teamId === homeId;
+
+      for (const stat of teamEntry.statistics) {
+        if (stat.name === 'batting') {
+          const lines = parseBattingLines(stat);
+          if (isHome) homeBatting  = lines;
+          else        awayBatting  = lines;
+        } else if (stat.name === 'pitching') {
+          const lines = parsePitchingLines(stat);
+          if (isHome) homePitching = lines;
+          else        awayPitching = lines;
+        }
+      }
+    }
+
+    if (homeBatting.length || awayBatting.length) {
+      detail.batting  = { home: homeBatting,  away: awayBatting  };
+    }
+    if (homePitching.length || awayPitching.length) {
+      detail.pitching = { home: homePitching, away: awayPitching };
     }
   }
 

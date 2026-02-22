@@ -20,6 +20,8 @@ export interface Team {
   logoUrl?: string;
   primaryColor?: string;
   rank?: number; // AP/coaches poll rank (1-25); undefined if unranked
+  wins?: number;
+  losses?: number;
 }
 
 export interface RunnersOn {
@@ -145,3 +147,22 @@ export type StandingsRow = Standing & {
   abbreviation: string;
   logoUrl?: string;
 };
+
+// ── NCAA Rankings ────────────────────────────────────────────────────
+
+export interface RankedCollegeTeam {
+  rank: number;
+  id: number;
+  displayName: string;
+  abbreviation: string;
+  primaryColor?: string;
+  logoUrl?: string;
+  conference?: string;
+  wins: number;
+  losses: number;
+}
+
+export interface NCAARankingsData {
+  pollName: string;
+  teams: RankedCollegeTeam[];
+}

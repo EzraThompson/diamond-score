@@ -316,6 +316,72 @@ interface KBOGameRaw {
   SEASON_ID:     number;
 }
 
+// ── Team records ──────────────────────────────────────────────────────────
+
+type RecordMap = Record<string, { wins: number; losses: number }>;
+
+interface KBORankRaw {
+  TEAM_ID?: string;   // e.g. "LG"
+  W_CN?:    string;   // wins count as string
+  L_CN?:    string;   // losses count as string
+  [key: string]: unknown;
+}
+
+/**
+ * Fetches season standings from the KBO ASMX API to get W/L records.
+ * Cached 1 hour. Returns an empty map if the call fails or the season
+ * hasn't started yet (off-season returns empty data).
+ */
+async function getKBOTeamRecords(): Promise<RecordMap> {
+  const cacheKey = 'kbo:records';
+  const cached = gameCache.get<RecordMap>(cacheKey);
+  if (cached) return cached;
+
+  const records: RecordMap = {};
+  const seasonId = new Date().getFullYear();
+
+  // Try the most likely standings endpoint
+  try {
+    const rows = await kboPost<KBORankRaw[]>(
+      '/ws/Record.asmx/GetTeamRank',
+      { leId: '1', srId: '1', seasonId: String(seasonId) },
+    );
+    for (const row of rows ?? []) {
+      const code = row.TEAM_ID;
+      const meta = code ? TEAM_BY_CODE[code] : undefined;
+      if (!meta) continue;
+      const wins   = parseInt(String(row.W_CN  ?? ''), 10);
+      const losses = parseInt(String(row.L_CN  ?? ''), 10);
+      if (!isNaN(wins) && !isNaN(losses)) {
+        records[meta.abbreviation] = { wins, losses };
+      }
+    }
+  } catch {
+    // Endpoint may not exist or season hasn't started — try alternate
+    try {
+      const rows = await kboPost<KBORankRaw[]>(
+        '/ws/Main.asmx/GetTeamRank',
+        { leId: '1', srId: '1', seasonId: String(seasonId) },
+      );
+      for (const row of rows ?? []) {
+        const code = row.TEAM_ID;
+        const meta = code ? TEAM_BY_CODE[code] : undefined;
+        if (!meta) continue;
+        const wins   = parseInt(String(row.W_CN  ?? ''), 10);
+        const losses = parseInt(String(row.L_CN  ?? ''), 10);
+        if (!isNaN(wins) && !isNaN(losses)) {
+          records[meta.abbreviation] = { wins, losses };
+        }
+      }
+    } catch (err) {
+      console.error('KBO standings fetch failed:', err);
+    }
+  }
+
+  gameCache.set(cacheKey, records, 3600); // 1-hour TTL
+  return records;
+}
+
 // ── Public API ──────────────────────────────────────────────────────────
 
 /**
@@ -350,18 +416,20 @@ export async function getKBOGames(date: string): Promise<Game[]> {
     return [];
   }
 
-  // Fetch scoreboard in parallel for games that have started (live or final)
-  // to obtain inning-by-inning linescore and actual start time.
-  const sbResults = await Promise.all(
-    rawGames.map((g) => {
-      const isStarted = g.GAME_STATE_SC !== '1';
-      if (!isStarted) return Promise.resolve(undefined);
-      const isLive = g.GAME_STATE_SC === '2';
-      return fetchScoreboard(g.G_ID, g.SR_ID, g.SEASON_ID, isLive).catch(
-        () => undefined,
-      );
-    }),
-  );
+  // Fetch team records and scoreboards in parallel
+  const [teamRecords, sbResults] = await Promise.all([
+    getKBOTeamRecords().catch(() => ({} as RecordMap)),
+    Promise.all(
+      rawGames.map((g) => {
+        const isStarted = g.GAME_STATE_SC !== '1';
+        if (!isStarted) return Promise.resolve(undefined);
+        const isLive = g.GAME_STATE_SC === '2';
+        return fetchScoreboard(g.G_ID, g.SR_ID, g.SEASON_ID, isLive).catch(
+          () => undefined,
+        );
+      }),
+    ),
+  ]);
 
   const games: Game[] = [];
 
@@ -388,13 +456,18 @@ export async function getKBOGames(date: string): Promise<Game[]> {
 
     const id = makeGameId(g.G_ID);
 
+    const homeTeamBase = resolveTeam(g.HOME_ID);
+    const awayTeamBase = resolveTeam(g.AWAY_ID);
+    const homeRecord = teamRecords[homeTeamBase.abbreviation];
+    const awayRecord = teamRecords[awayTeamBase.abbreviation];
+
     const game: Game = {
       id,
       league: KBO_LEAGUE,
       status,
       scheduledTime,
-      homeTeam:  resolveTeam(g.HOME_ID),
-      awayTeam:  resolveTeam(g.AWAY_ID),
+      homeTeam: { ...homeTeamBase, ...homeRecord },
+      awayTeam: { ...awayTeamBase, ...awayRecord },
       homeScore: parseInt(g.B_SCORE_CN, 10) || 0,
       awayScore: parseInt(g.T_SCORE_CN, 10) || 0,
       currentInning,

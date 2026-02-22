@@ -243,6 +243,11 @@ export default function GameCard({ game }: { game: Game }) {
                 </span>
               )}
               {game.awayTeam.abbreviation}
+              {game.awayTeam.wins !== undefined && (
+                <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
+                  {game.awayTeam.wins}-{game.awayTeam.losses}
+                </span>
+              )}
             </span>
             <div data-star className="flex items-center">
               <StarButton
@@ -255,8 +260,8 @@ export default function GameCard({ game }: { game: Game }) {
             </div>
             <span
               data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 text-lg font-semibold tabular-nums font-mono rounded px-0.5 transition-colors ${
-                awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : 'text-gray-500'
+              className={`ml-1 text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
+                awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
               } ${awayFlashing ? 'animate-score-flash text-accent' : ''} ${
                 spoilerActive ? 'cursor-pointer select-none' : ''
               }`}
@@ -280,6 +285,11 @@ export default function GameCard({ game }: { game: Game }) {
                 </span>
               )}
               {game.homeTeam.abbreviation}
+              {game.homeTeam.wins !== undefined && (
+                <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
+                  {game.homeTeam.wins}-{game.homeTeam.losses}
+                </span>
+              )}
             </span>
             <div data-star className="flex items-center">
               <StarButton
@@ -292,8 +302,8 @@ export default function GameCard({ game }: { game: Game }) {
             </div>
             <span
               data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 text-lg font-semibold tabular-nums font-mono rounded px-0.5 transition-colors ${
-                homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : 'text-gray-500'
+              className={`ml-1 text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
+                homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
               } ${homeFlashing ? 'animate-score-flash text-accent' : ''} ${
                 spoilerActive ? 'cursor-pointer select-none' : ''
               }`}

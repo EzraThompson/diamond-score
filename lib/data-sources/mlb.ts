@@ -306,12 +306,14 @@ function mapInningHalf(linescore: MLBLinescore): InningHalf | undefined {
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function parseTeam(t: MLBGameTeam['team']): Team {
+function parseTeam(t: MLBGameTeam['team'], record?: MLBGameTeam['leagueRecord']): Team {
   return {
     id: t.id,
     name: t.name,
     abbreviation: t.abbreviation ?? t.name.slice(0, 3).toUpperCase(),
     primaryColor: TEAM_COLORS[t.id],
+    wins: record?.wins,
+    losses: record?.losses,
   };
 }
 
@@ -382,8 +384,8 @@ export async function fetchScheduleGames(
         league,
         status,
         scheduledTime: g.gameDate,
-        homeTeam: parseTeam(g.teams.home.team),
-        awayTeam: parseTeam(g.teams.away.team),
+        homeTeam: parseTeam(g.teams.home.team, g.teams.home.leagueRecord),
+        awayTeam: parseTeam(g.teams.away.team, g.teams.away.leagueRecord),
         homeScore: g.teams.home.score ?? 0,
         awayScore: g.teams.away.score ?? 0,
         currentInning: ls?.currentInning,

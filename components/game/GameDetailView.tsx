@@ -202,10 +202,14 @@ function LinescoreTab({ detail }: { detail: GameDetail }) {
                 <td className="text-left font-bold text-[11px] text-gray-800 pr-2">{row.label}</td>
                 {numbers.map((n) => {
                   const inn = innings.find((i) => i.inning === n);
-                  const val = inn ? (row.side === 'away' ? inn.away : inn.home) : null;
+                  const val = inn != null ? (row.side === 'away' ? inn.away : inn.home) : undefined;
+                  // val === null  → team didn't bat that half-inning (walk-off, etc.) → '-'
+                  // val === undefined → inning not yet reached → '-'
+                  // val === 0    → team batted, scored 0 → '0'
+                  const isEmpty = val === null || val === undefined;
                   return (
-                    <td key={n} className={val === null ? 'text-gray-300' : ''}>
-                      {val ?? (innings.length >= n ? '0' : '-')}
+                    <td key={n} className={isEmpty ? 'text-gray-300' : ''}>
+                      {isEmpty ? '-' : val}
                     </td>
                   );
                 })}

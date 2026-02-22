@@ -450,6 +450,63 @@ function parseHeaderScores(html: string): {
   return { headerDate, games };
 }
 
+// ── Team records ──────────────────────────────────────────────────────
+
+type RecordMap = Record<string, { wins: number; losses: number }>;
+
+/**
+ * Scrapes the NPB standings page to get W/L records for all 12 teams.
+ * Cached 1 hour. Returns an empty map if the scrape fails or season
+ * hasn't started yet.
+ */
+async function getNPBTeamRecords(): Promise<RecordMap> {
+  const cacheKey = 'npb:records';
+  const cached = gameCache.get<RecordMap>(cacheKey);
+  if (cached) return cached;
+
+  const records: RecordMap = {};
+  try {
+    const html = await npbFetch(`${NPB_BASE}/standings/`);
+    const $ = load(html);
+
+    $('table').each((_, table) => {
+      const $table = $(table);
+
+      // Detect W and L column indices from table headers
+      const headerCells = $table.find('thead tr th, thead tr td');
+      let wIdx = -1;
+      let lIdx = -1;
+      headerCells.each((i, th) => {
+        const txt = $(th).text().trim();
+        if (txt === '勝' || txt === 'W') wIdx = i;
+        if (txt === '負' || txt === 'L') lIdx = i;
+      });
+      if (wIdx === -1 || lIdx === -1) return; // not a standings table
+
+      $table.find('tbody tr').each((_, tr) => {
+        const $tr = $(tr);
+        // Identify team by logo img src (code embedded in filename)
+        const imgSrc = $tr.find('img').attr('src') ?? '';
+        const codeMatch = imgSrc.match(/logo_([^_/]+)[_.]/) ;
+        const code = codeMatch?.[1];
+        if (!code || !TEAM_BY_CODE[code]) return;
+
+        const tds = $tr.find('td');
+        const wins   = parseInt($(tds.get(wIdx)).text().trim(), 10);
+        const losses = parseInt($(tds.get(lIdx)).text().trim(), 10);
+        if (!isNaN(wins) && !isNaN(losses)) {
+          records[TEAM_BY_CODE[code].abbreviation] = { wins, losses };
+        }
+      });
+    });
+  } catch (err) {
+    console.error('NPB standings fetch failed:', err);
+  }
+
+  gameCache.set(cacheKey, records, 3600); // 1-hour TTL
+  return records;
+}
+
 // ── Public API ────────────────────────────────────────────────────────
 
 /**
@@ -485,12 +542,15 @@ export async function getNPBGames(date: string): Promise<Game[]> {
     return [];
   }
 
-  // ── Step 2: fetch each game detail page in parallel ───────────────
-  const detailResults = await Promise.all(
-    headerGames.map((g) =>
-      fetchGameDetail(g.slug, g.year, g.mmdd).catch(() => undefined),
+  // ── Step 2: fetch team records and game detail pages in parallel ──
+  const [teamRecords, detailResults] = await Promise.all([
+    getNPBTeamRecords().catch(() => ({} as RecordMap)),
+    Promise.all(
+      headerGames.map((g) =>
+        fetchGameDetail(g.slug, g.year, g.mmdd).catch(() => undefined),
+      ),
     ),
-  );
+  ]);
 
   // ── Step 3: assemble Game objects ─────────────────────────────────
   const games: Game[] = [];
@@ -522,13 +582,18 @@ export async function getNPBGames(date: string): Promise<Game[]> {
 
     const id = makeGameId(hg.mmdd, hg.slug);
 
+    const homeTeamBase = resolveTeam(hg.homeTeamJa, hg.homeImgSrc, hg.year);
+    const awayTeamBase = resolveTeam(hg.awayTeamJa, hg.awayImgSrc, hg.year);
+    const homeRecord = teamRecords[homeTeamBase.abbreviation];
+    const awayRecord = teamRecords[awayTeamBase.abbreviation];
+
     const game: Game = {
       id,
       league: NPB_LEAGUE,
       status,
       scheduledTime,
-      homeTeam: resolveTeam(hg.homeTeamJa, hg.homeImgSrc, hg.year),
-      awayTeam: resolveTeam(hg.awayTeamJa, hg.awayImgSrc, hg.year),
+      homeTeam: { ...homeTeamBase, ...homeRecord },
+      awayTeam: { ...awayTeamBase, ...awayRecord },
       homeScore,
       awayScore,
       currentInning: status === 'live' ? currentInning : undefined,
