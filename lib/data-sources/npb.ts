@@ -270,7 +270,6 @@ async function fetchGameDetail(
   slug: string,        // e.g. "e-m-01"
   year: string,        // e.g. "2026"
   mmdd: string,        // e.g. "0221"
-  _date: string,       // e.g. "2026-02-21"
 ): Promise<GameDetailResult | undefined> {
   const pageCacheKey = `npb:page:${year}:${mmdd}:${slug}`;
   const pageCached = gameCache.get<GameDetailResult>(pageCacheKey);
@@ -489,7 +488,7 @@ export async function getNPBGames(date: string): Promise<Game[]> {
   // ── Step 2: fetch each game detail page in parallel ───────────────
   const detailResults = await Promise.all(
     headerGames.map((g) =>
-      fetchGameDetail(g.slug, g.year, g.mmdd, date).catch(() => undefined),
+      fetchGameDetail(g.slug, g.year, g.mmdd).catch(() => undefined),
     ),
   );
 
@@ -576,7 +575,7 @@ export async function getNPBGameDetail(id: number): Promise<GameDetail> {
   const { year, mmdd, slug, date, game } = meta;
 
   // Re-fetch (uses per-page cache internally; returns fresh data if live)
-  const detail = await fetchGameDetail(slug, year, mmdd, date);
+  const detail = await fetchGameDetail(slug, year, mmdd);
 
   const status: GameStatus = detail?.status ?? game.status;
   const isLive = status === 'live';
