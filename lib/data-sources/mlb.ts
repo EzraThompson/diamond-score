@@ -343,19 +343,6 @@ function parseLinescore(innings?: MLBLinescore['innings']): LinescoreInning[] | 
   }));
 }
 
-function parseRunners(play: MLBLiveFeed['liveData']['plays']['currentPlay']): RunnersOn {
-  const runners: RunnersOn = { first: false, second: false, third: false };
-  if (!play?.runners) return runners;
-  for (const r of play.runners) {
-    const base = r.movement.end;
-    if (r.movement.isOut) continue;
-    if (base === '1B') runners.first = true;
-    else if (base === '2B') runners.second = true;
-    else if (base === '3B') runners.third = true;
-  }
-  return runners;
-}
-
 // Use linescore.offense for runner state — stays accurate during defensive subs
 // and pitching changes where currentPlay.runners is empty.
 function parseRunnersFromLinescore(offense?: {
