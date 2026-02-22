@@ -572,7 +572,7 @@ export async function getNPBGameDetail(id: number): Promise<GameDetail> {
     );
   }
 
-  const { year, mmdd, slug, date, game } = meta;
+  const { year, mmdd, slug, game } = meta;
 
   // Re-fetch (uses per-page cache internally; returns fresh data if live)
   const detail = await fetchGameDetail(slug, year, mmdd);
