@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiamondScore — Light Theme Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Page shell ─────────────────────────────────────────────────── */
+    body {
+      background: #0a0a0a;
+      background-image: radial-gradient(ellipse at 20% 50%, #0d1a0d 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, #0a120a 0%, transparent 50%);
+      min-height: 100vh;
+      padding: 52px 24px 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+      font-family: system-ui, sans-serif;
+      color: #eee;
+    }
+
+    .page-header { text-align: center; }
+
+    .page-header h1 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #e8f5e0 0%, #a8d8a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-header p {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #555;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .themes-row {
+      display: flex;
+      gap: 36px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .theme-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .theme-meta { text-align: center; }
+    .theme-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4a7c4a;
+      margin-bottom: 4px;
+    }
+    .theme-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ddd;
+      letter-spacing: -0.02em;
+    }
+    .theme-desc {
+      margin-top: 5px;
+      font-size: 0.78rem;
+      color: #555;
+      max-width: 200px;
+      line-height: 1.55;
+    }
+
+    /* ── Phone frame ─────────────────────────────────────────────────── */
+    .phone {
+      width: 320px;
+      height: 638px;
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.07),
+        0 8px 32px rgba(0,0,0,0.5),
+        0 32px 80px rgba(0,0,0,0.5);
+      border: 7px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .scroll-area::-webkit-scrollbar { display: none; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       THEME A — "Scorecard"
+       Forest green header · cream body · Playfair + DM Sans
+    ═══════════════════════════════════════════════════════════════════ */
+    .a {
+      --bg:          #F0EAD8;
+      --bg-card:     #FBF7EE;
+      --bg-header:   #1B4D35;
+      --bg-strip:    #E6DFC9;
+      --strip-active:#1B4D35;
+      --bg-nav:      #FBF7EE;
+      --border:      #C5B89A;
+      --border-soft: #DDD3BB;
+      --text-1:      #1A1714;
+      --text-2:      #5C5448;
+      --text-3:      #9B9080;
+      --accent:      #1B4D35;
+      --live:        #16A34A;
+      --live-bg:     rgba(22,163,74,0.10);
+      --final:       #7A6E60;
+      --sched:       #9B9080;
+      --delay:       #C2770A;
+      --badge-bg:    #DCCFB5;
+      --date-text:   #6B6050;
+      background: var(--bg);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: var(--text-1);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       THEME B — "Fresh Field"
+       White cards · electric green · Plus Jakarta Sans + JetBrains Mono
+    ═══════════════════════════════════════════════════════════════════ */
+    .b {
+      --bg:          #F2FAF2;
+      --bg-card:     #FFFFFF;
+      --bg-header:   #FFFFFF;
+      --bg-strip:    #EAF5EA;
+      --strip-active:#18A34A;
+      --bg-nav:      #FFFFFF;
+      --border:      #CCDFCC;
+      --border-soft: #E0EFE0;
+      --text-1:      #0C1F0C;
+      --text-2:      #3D5C3D;
+      --text-3:      #7B9B7B;
+      --accent:      #18A34A;
+      --live:        #22C55E;
+      --live-bg:     rgba(34,197,94,0.10);
+      --final:       #5F7A5F;
+      --sched:       #7B9B7B;
+      --delay:       #D97706;
+      --badge-bg:    #D0E8D0;
+      --date-text:   #3D6B3D;
+      background: var(--bg);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      color: var(--text-1);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       THEME C — "Broadsheet"
+       Warm ivory · pine green · Libre Baskerville + IBM Plex Sans
+    ═══════════════════════════════════════════════════════════════════ */
+    .c {
+      --bg:          #F9F6EF;
+      --bg-card:     #FFFFFF;
+      --bg-header:   #F9F6EF;
+      --bg-strip:    #EEE9DE;
+      --strip-active:#166534;
+      --bg-nav:      #FFFFFF;
+      --border:      #DDD4BF;
+      --border-soft: #EAE3D4;
+      --text-1:      #18181B;
+      --text-2:      #52524A;
+      --text-3:      #A09890;
+      --accent:      #166534;
+      --live:        #15803D;
+      --live-bg:     rgba(21,128,61,0.09);
+      --final:       #71716A;
+      --sched:       #A09890;
+      --delay:       #B45309;
+      --badge-bg:    #E2D9C8;
+      --date-text:   #6B6558;
+      background: var(--bg);
+      font-family: 'IBM Plex Sans', system-ui, sans-serif;
+      color: var(--text-1);
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 48px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .a .app-header { background: var(--bg-header); border-color: rgba(255,255,255,0.08); }
+    .b .app-header { background: var(--bg-header); }
+    .c .app-header { background: var(--bg-header); }
+
+    .logo-wrap { display: flex; align-items: center; gap: 8px; }
+
+    .logo-mark {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .a .logo-mark { background: rgba(255,255,255,0.15); }
+    .b .logo-mark { background: var(--accent); }
+    .c .logo-mark { background: var(--accent); }
+
+    .logo-mark svg { display: block; }
+
+    .app-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+    .a .app-name { font-family: 'Playfair Display', serif; font-size: 16px; color: #fff; letter-spacing: 0; }
+    .b .app-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; color: var(--text-1); }
+    .c .app-name { font-family: 'Libre Baskerville', serif; font-size: 14.5px; font-style: italic; color: var(--text-1); }
+
+    .today-btn {
+      font-size: 11px; font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 20px;
+      border: none; cursor: pointer;
+      font-family: inherit;
+    }
+    .a .today-btn { background: rgba(255,255,255,0.18); color: #fff; }
+    .b .today-btn { background: var(--accent); color: #fff; }
+    .c .today-btn { background: var(--accent); color: #fff; }
+
+    /* ── Date Strip ──────────────────────────────────────────────────── */
+    .date-strip {
+      display: flex; gap: 3px;
+      padding: 8px 14px;
+      overflow-x: auto; scrollbar-width: none;
+      flex-shrink: 0;
+      background: var(--bg-strip);
+      border-bottom: 1px solid var(--border);
+    }
+    .date-strip::-webkit-scrollbar { display: none; }
+
+    .date-btn {
+      display: flex; flex-direction: column; align-items: center;
+      flex-shrink: 0; width: 42px; padding: 6px 0;
+      border-radius: 10px;
+      border: none; cursor: pointer;
+      background: transparent;
+      color: var(--date-text);
+      font-family: inherit;
+    }
+    .date-btn.active { background: var(--strip-active); color: #fff; }
+    .date-btn.today:not(.active) { color: var(--accent); }
+
+    .d-dow { font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .d-num { font-size: 15px; font-weight: 700; line-height: 1.2; }
+    .d-mon { font-size: 7.5px; opacity: 0.55; margin-top: 1px; }
+
+    /* ── League section ──────────────────────────────────────────────── */
+    .league-sec { margin-bottom: 12px; }
+
+    .league-hd {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 14px 5px;
+    }
+
+    .league-badge {
+      width: 20px; height: 20px;
+      border-radius: 5px;
+      background: var(--badge-bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .league-badge span {
+      font-size: 6.5px; font-weight: 800;
+      color: var(--text-2);
+      letter-spacing: 0.02em;
+    }
+
+    .league-nm {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--text-3); flex: 1;
+    }
+    .a .league-nm { font-family: 'DM Sans', sans-serif; }
+    .b .league-nm { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .c .league-nm { font-family: 'IBM Plex Sans', sans-serif; letter-spacing: 0.12em; }
+
+    .live-pill {
+      font-size: 8.5px; font-weight: 700;
+      color: var(--live);
+      background: var(--live-bg);
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    .league-ct { font-size: 10px; color: var(--text-3); }
+
+    .chevron-svg { width: 11px; height: 11px; color: var(--text-3); flex-shrink: 0; }
+
+    .games-list { display: flex; flex-direction: column; gap: 7px; padding: 0 10px; }
+
+    /* ── Game Card ───────────────────────────────────────────────────── */
+    .gcard {
+      background: var(--bg-card);
+      border-radius: 13px;
+      padding: 11px 13px;
+      border: 1px solid var(--border-soft);
+      cursor: pointer;
+    }
+
+    .a .gcard { box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .b .gcard { box-shadow: 0 2px 10px rgba(0,0,0,0.04); border-color: var(--border-soft); }
+    .c .gcard { box-shadow: 0 1px 5px rgba(0,0,0,0.04); }
+
+    .gcard.is-live {
+      border-color: rgba(34,197,94,0.28);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.08), 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .a .gcard.is-live { box-shadow: 0 0 0 1px rgba(22,163,74,0.12), 0 2px 8px rgba(0,0,0,0.06); }
+
+    /* Status row */
+    .card-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .status-live-row { display: flex; align-items: center; gap: 5px; }
+
+    .live-dot-outer {
+      position: relative; width: 10px; height: 10px; flex-shrink: 0;
+    }
+    .live-ping {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: var(--live);
+      opacity: 0.35;
+      animation: liveping 1.6s ease-out infinite;
+    }
+    .live-core {
+      position: absolute; inset: 2px;
+      border-radius: 50%;
+      background: var(--live);
+    }
+    @keyframes liveping {
+      0%   { transform: scale(1); opacity: 0.4; }
+      70%  { transform: scale(2.1); opacity: 0; }
+      100% { transform: scale(2.1); opacity: 0; }
+    }
+
+    .live-label { font-size: 10.5px; font-weight: 700; color: var(--live); }
+    .b .live-label { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    .final-label { font-size: 10.5px; font-weight: 500; color: var(--final); }
+    .sched-label { font-size: 10.5px; color: var(--sched); }
+    .a .sched-label { font-family: 'DM Sans', sans-serif; }
+
+    .count-outs { display: flex; align-items: center; gap: 6px; }
+    .count-nums {
+      font-size: 8.5px; color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .outs-row { display: flex; gap: 2px; align-items: center; }
+    .odot {
+      width: 5.5px; height: 5.5px; border-radius: 50%;
+    }
+    .odot.on  { background: #EABB2C; }
+    .odot.off { background: var(--border); }
+
+    /* Teams area */
+    .teams-area { display: flex; align-items: center; gap: 8px; }
+    .teams-col   { flex: 1; min-width: 0; }
+
+    .team-row   {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .team-row.away { margin-bottom: 5px; }
+
+    .team-logo {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 6.5px; font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .team-abbr {
+      font-size: 13px; font-weight: 700;
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .b .team-abbr { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+    .c .team-abbr { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; }
+
+    .team-abbr.w  { color: var(--text-1); }
+    .team-abbr.l  { color: var(--text-2); }
+    .team-abbr.s  { color: var(--text-3); }
+
+    .score-num {
+      font-size: 19px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+      min-width: 24px; text-align: right;
+    }
+    .b .score-num { font-family: 'JetBrains Mono', monospace; font-size: 17px; }
+
+    .score-num.w  { color: var(--text-1); }
+    .score-num.l  { color: var(--text-2); }
+    .score-num.n  { color: var(--text-3); } /* scheduled */
+
+    /* Diamond side panel */
+    .diamond-panel {
+      flex-shrink: 0;
+      padding-left: 9px;
+      border-left: 1px solid var(--border-soft);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+    }
+
+    .pitcher-name {
+      font-size: 7.5px; color: var(--text-3);
+      max-width: 52px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Bottom Nav ──────────────────────────────────────────────────── */
+    .bnav {
+      height: 52px; flex-shrink: 0;
+      background: var(--bg-nav);
+      border-top: 1px solid var(--border);
+      display: flex;
+    }
+
+    .btab {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text-3);
+    }
+    .btab.active { color: var(--accent); }
+    .btab svg { width: 20px; height: 20px; }
+    .btab-lbl { font-size: 8px; font-weight: 600; font-family: inherit; }
+
+    /* ── Scroll content padding ─── */
+    .scroll-area { padding: 8px 0 16px; }
+
+    /* ── Linescore mini (expand hint) ─── */
+    .expand-hint {
+      display: flex; justify-content: center;
+      margin-top: 4px;
+    }
+    .expand-hint svg { width: 12px; height: 12px; color: var(--text-3); }
+
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>DiamondScore Light Themes</h1>
+    <p>Three directions &nbsp;·&nbsp; review & pick your favorite</p>
+  </div>
+
+  <div class="themes-row">
+
+    <!-- ═══ THEME A ═══════════════════════════════════════════════════ -->
+    <div class="theme-col">
+      <div class="theme-meta">
+        <div class="theme-tag">Option A</div>
+        <div class="theme-name">Scorecard</div>
+        <div class="theme-desc">Deep green header, warm cream body. Classic ballpark paper scorecard, gone digital.</div>
+      </div>
+      <div class="phone">
+        <div class="phone-screen a">
+          <!-- Header -->
+          <header class="app-header">
+            <div class="logo-wrap">
+              <div class="logo-mark">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+                  <circle cx="12" cy="12" r="2.5" fill="rgba(255,255,255,0.9)"/>
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span class="app-name">DiamondScore</span>
+            </div>
+            <button class="today-btn">Today</button>
+          </header>
+
+          <!-- Date strip -->
+          <div class="date-strip">
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">15</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Mon</span><span class="d-num">16</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Tue</span><span class="d-num">17</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Wed</span><span class="d-num">18</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Thu</span><span class="d-num">19</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn today active"><span class="d-dow">Fri</span><span class="d-num">20</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sat</span><span class="d-num">21</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">22</span><span class="d-mon">Feb</span></button>
+          </div>
+
+          <!-- Scrollable content -->
+          <div class="scroll-area">
+
+            <!-- MLB -->
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>MLB</span></div>
+                <span class="league-nm">MLB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">3</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+
+                <!-- Live game -->
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Bot 7th</span>
+                    </div>
+                    <div class="count-outs">
+                      <span class="count-nums">2-1</span>
+                      <div class="outs-row">
+                        <div class="odot on"></div>
+                        <div class="odot on"></div>
+                        <div class="odot off"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">NYY</div>
+                        <span class="team-abbr l">NYY</span>
+                        <span class="score-num l">3</span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">BOS</div>
+                        <span class="team-abbr w">BOS</span>
+                        <span class="score-num w">4</span>
+                      </div>
+                    </div>
+                    <div class="diamond-panel">
+                      <svg width="30" height="30" viewBox="0 0 30 30">
+                        <rect x="8" y="15" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 15)" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-opacity="0.3" stroke-width="1"/>
+                        <rect x="1" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 5.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="15" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 19.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="8" y="1" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 5.5)" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-opacity="0.3" stroke-width="1"/>
+                      </svg>
+                      <span class="pitcher-name">García</span>
+                    </div>
+                  </div>
+                  <div class="expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+                </div>
+
+                <!-- Final game -->
+                <div class="gcard">
+                  <div class="card-top">
+                    <span class="final-label">Final</span>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">SF</div>
+                        <span class="team-abbr l">SF</span>
+                        <span class="score-num l">2</span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">LAD</div>
+                        <span class="team-abbr w">LAD</span>
+                        <span class="score-num w">7</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Scheduled game -->
+                <div class="gcard">
+                  <div class="card-top">
+                    <span class="sched-label">7:05 PM</span>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">CHC</div>
+                        <span class="team-abbr s">CHC</span>
+                        <span class="score-num n"></span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">NYM</div>
+                        <span class="team-abbr s">NYM</span>
+                        <span class="score-num n"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- NPB -->
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>NPB</span></div>
+                <span class="league-nm">NPB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">1</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Top 5th</span>
+                    </div>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">YG</div>
+                        <span class="team-abbr w">Giants</span>
+                        <span class="score-num w">2</span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E8E0CC;color:#334;">HT</div>
+                        <span class="team-abbr l">Tigers</span>
+                        <span class="score-num l">1</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /scroll -->
+
+          <!-- Bottom nav -->
+          <nav class="bnav">
+            <button class="btab active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+              <span class="btab-lbl">Scores</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 21v-8m4 8V9m4 12v-5" stroke-linecap="round"/></svg>
+              <span class="btab-lbl">Standings</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="btab-lbl">Schedule</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              <span class="btab-lbl">Settings</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div><!-- /theme-col A -->
+
+    <!-- ═══ THEME B ═══════════════════════════════════════════════════ -->
+    <div class="theme-col">
+      <div class="theme-meta">
+        <div class="theme-tag">Option B</div>
+        <div class="theme-name">Fresh Field</div>
+        <div class="theme-desc">Crisp white cards on a pale green field. Modern sports analytics with monospace scores.</div>
+      </div>
+      <div class="phone">
+        <div class="phone-screen b">
+          <header class="app-header">
+            <div class="logo-wrap">
+              <div class="logo-mark">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+                  <circle cx="12" cy="12" r="2.5" fill="rgba(255,255,255,1)"/>
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span class="app-name">DiamondScore</span>
+            </div>
+            <button class="today-btn">Today</button>
+          </header>
+
+          <div class="date-strip">
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">15</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Mon</span><span class="d-num">16</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Tue</span><span class="d-num">17</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Wed</span><span class="d-num">18</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Thu</span><span class="d-num">19</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn today active"><span class="d-dow">Fri</span><span class="d-num">20</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sat</span><span class="d-num">21</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">22</span><span class="d-mon">Feb</span></button>
+          </div>
+
+          <div class="scroll-area">
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>MLB</span></div>
+                <span class="league-nm">MLB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">3</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Bot 7th</span>
+                    </div>
+                    <div class="count-outs">
+                      <span class="count-nums">2-1</span>
+                      <div class="outs-row">
+                        <div class="odot on"></div><div class="odot on"></div><div class="odot off"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">NYY</div>
+                        <span class="team-abbr l">NYY</span>
+                        <span class="score-num l">3</span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">BOS</div>
+                        <span class="team-abbr w">BOS</span>
+                        <span class="score-num w">4</span>
+                      </div>
+                    </div>
+                    <div class="diamond-panel">
+                      <svg width="30" height="30" viewBox="0 0 30 30">
+                        <rect x="8" y="15" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 15)" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+                        <rect x="1" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 5.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="15" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 19.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="8" y="1" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 5.5)" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+                      </svg>
+                      <span class="pitcher-name">García</span>
+                    </div>
+                  </div>
+                  <div class="expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+                </div>
+                <div class="gcard">
+                  <div class="card-top"><span class="final-label">Final</span></div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">SF</div>
+                      <span class="team-abbr l">SF</span><span class="score-num l">2</span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">LAD</div>
+                      <span class="team-abbr w">LAD</span><span class="score-num w">7</span>
+                    </div>
+                  </div></div>
+                </div>
+                <div class="gcard">
+                  <div class="card-top"><span class="sched-label">7:05 PM</span></div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">CHC</div>
+                      <span class="team-abbr s">CHC</span><span class="score-num n"></span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">NYM</div>
+                      <span class="team-abbr s">NYM</span><span class="score-num n"></span>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>NPB</span></div>
+                <span class="league-nm">NPB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">1</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Top 5th</span>
+                    </div>
+                  </div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">YG</div>
+                      <span class="team-abbr w">Giants</span><span class="score-num w">2</span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E0F0E8;color:#1B4D35;font-size:7px;">HT</div>
+                      <span class="team-abbr l">Tigers</span><span class="score-num l">1</span>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bnav">
+            <button class="btab active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+              <span class="btab-lbl">Scores</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 21v-8m4 8V9m4 12v-5" stroke-linecap="round"/></svg>
+              <span class="btab-lbl">Standings</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="btab-lbl">Schedule</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              <span class="btab-lbl">Settings</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div><!-- /theme-col B -->
+
+    <!-- ═══ THEME C ═══════════════════════════════════════════════════ -->
+    <div class="theme-col">
+      <div class="theme-meta">
+        <div class="theme-tag">Option C</div>
+        <div class="theme-name">Broadsheet</div>
+        <div class="theme-desc">Warm ivory, serif logo, pine green accents. Premium editorial energy.</div>
+      </div>
+      <div class="phone">
+        <div class="phone-screen c">
+          <header class="app-header">
+            <div class="logo-wrap">
+              <div class="logo-mark">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+                  <circle cx="12" cy="12" r="2.5" fill="rgba(255,255,255,1)"/>
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span class="app-name">DiamondScore</span>
+            </div>
+            <button class="today-btn">Today</button>
+          </header>
+
+          <div class="date-strip">
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">15</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Mon</span><span class="d-num">16</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Tue</span><span class="d-num">17</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Wed</span><span class="d-num">18</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Thu</span><span class="d-num">19</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn today active"><span class="d-dow">Fri</span><span class="d-num">20</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sat</span><span class="d-num">21</span><span class="d-mon">Feb</span></button>
+            <button class="date-btn"><span class="d-dow">Sun</span><span class="d-num">22</span><span class="d-mon">Feb</span></button>
+          </div>
+
+          <div class="scroll-area">
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>MLB</span></div>
+                <span class="league-nm">MLB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">3</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Bot 7th</span>
+                    </div>
+                    <div class="count-outs">
+                      <span class="count-nums">2-1</span>
+                      <div class="outs-row">
+                        <div class="odot on"></div><div class="odot on"></div><div class="odot off"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="teams-area">
+                    <div class="teams-col">
+                      <div class="team-row away">
+                        <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">NYY</div>
+                        <span class="team-abbr l">NYY</span><span class="score-num l">3</span>
+                      </div>
+                      <div class="team-row">
+                        <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">BOS</div>
+                        <span class="team-abbr w">BOS</span><span class="score-num w">4</span>
+                      </div>
+                    </div>
+                    <div class="diamond-panel">
+                      <svg width="30" height="30" viewBox="0 0 30 30">
+                        <rect x="8" y="15" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 15)" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.2" stroke-width="1"/>
+                        <rect x="1" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 5.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="15" y="8" width="9" height="9" rx="1.5" transform="rotate(-45 19.5 12.5)" fill="var(--live)" stroke="none"/>
+                        <rect x="8" y="1" width="9" height="9" rx="1.5" transform="rotate(-45 12.5 5.5)" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-opacity="0.2" stroke-width="1"/>
+                      </svg>
+                      <span class="pitcher-name">García</span>
+                    </div>
+                  </div>
+                  <div class="expand-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+                </div>
+                <div class="gcard">
+                  <div class="card-top"><span class="final-label">Final</span></div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">SF</div>
+                      <span class="team-abbr l">SF</span><span class="score-num l">2</span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">LAD</div>
+                      <span class="team-abbr w">LAD</span><span class="score-num w">7</span>
+                    </div>
+                  </div></div>
+                </div>
+                <div class="gcard">
+                  <div class="card-top"><span class="sched-label">7:05 PM</span></div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">CHC</div>
+                      <span class="team-abbr s">CHC</span><span class="score-num n"></span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">NYM</div>
+                      <span class="team-abbr s">NYM</span><span class="score-num n"></span>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+            <div class="league-sec">
+              <div class="league-hd">
+                <div class="league-badge"><span>NPB</span></div>
+                <span class="league-nm">NPB</span>
+                <span class="live-pill">1 live</span>
+                <span class="league-ct">1</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="games-list">
+                <div class="gcard is-live">
+                  <div class="card-top">
+                    <div class="status-live-row">
+                      <div class="live-dot-outer"><div class="live-ping"></div><div class="live-core"></div></div>
+                      <span class="live-label">Top 5th</span>
+                    </div>
+                  </div>
+                  <div class="teams-area"><div class="teams-col">
+                    <div class="team-row away">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">YG</div>
+                      <span class="team-abbr w">Giants</span><span class="score-num w">2</span>
+                    </div>
+                    <div class="team-row">
+                      <div class="team-logo" style="background:#E8E2D5;color:#3C3830;font-size:7px;">HT</div>
+                      <span class="team-abbr l">Tigers</span><span class="score-num l">1</span>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bnav">
+            <button class="btab active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+              <span class="btab-lbl">Scores</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 21v-8m4 8V9m4 12v-5" stroke-linecap="round"/></svg>
+              <span class="btab-lbl">Standings</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="btab-lbl">Schedule</span>
+            </button>
+            <button class="btab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              <span class="btab-lbl">Settings</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div><!-- /theme-col C -->
+
+  </div><!-- /themes-row -->
+
+  <p style="font-size:0.78rem;color:#3a3a3a;text-align:center;margin-top:8px;">
+    Open <code style="color:#4a7c4a;">theme-preview.html</code> in a browser to review &nbsp;·&nbsp; tell me which direction to build out
+  </p>
+
+</body>
+</html>

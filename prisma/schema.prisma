@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model League {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(100)
+  country     String?    @db.VarChar(50)
+  sportId     Int?       @map("sport_id")
+  logoUrl     String?    @map("logo_url") @db.VarChar(500)
+  seasonStart DateTime?  @map("season_start") @db.Date
+  seasonEnd   DateTime?  @map("season_end") @db.Date
+  isActive    Boolean    @default(true) @map("is_active")
+
+  teams     Team[]
+  games     Game[]
+  standings Standing[]
+
+  @@map("leagues")
+}
+
+model Team {
+  id             Int      @id @default(autoincrement())
+  leagueId       Int      @map("league_id")
+  name           String   @db.VarChar(100)
+  abbreviation   String?  @db.VarChar(10)
+  nameLocal      String?  @map("name_local") @db.VarChar(100)
+  logoUrl        String?  @map("logo_url") @db.VarChar(500)
+  primaryColor   String?  @map("primary_color") @db.VarChar(7)
+  secondaryColor String?  @map("secondary_color") @db.VarChar(7)
+  externalId     String?  @map("external_id") @db.VarChar(100)
+  externalSource String?  @map("external_source") @db.VarChar(50)
+
+  league    League @relation(fields: [leagueId], references: [id])
+  homeGames Game[] @relation("HomeTeam")
+  awayGames Game[] @relation("AwayTeam")
+  standings Standing[]
+
+  @@map("teams")
+}
+
+model Game {
+  id             Int       @id @default(autoincrement())
+  leagueId       Int       @map("league_id")
+  homeTeamId     Int       @map("home_team_id")
+  awayTeamId     Int       @map("away_team_id")
+  status         String    @db.VarChar(20)
+  scheduledTime  DateTime? @map("scheduled_time") @db.Timestamptz()
+  currentInning  Int?      @map("current_inning")
+  inningHalf     String?   @map("inning_half") @db.VarChar(10)
+  homeScore      Int       @default(0) @map("home_score")
+  awayScore      Int       @default(0) @map("away_score")
+  homeHits       Int?      @map("home_hits")
+  awayHits       Int?      @map("away_hits")
+  homeErrors     Int?      @map("home_errors")
+  awayErrors     Int?      @map("away_errors")
+  outs           Int?
+  runnersOn      Json?     @map("runners_on")
+  balls          Int?
+  strikes        Int?
+  linescore      Json?
+  winningPitcher String?   @map("winning_pitcher") @db.VarChar(100)
+  losingPitcher  String?   @map("losing_pitcher") @db.VarChar(100)
+  savePitcher    String?   @map("save_pitcher") @db.VarChar(100)
+  externalId     String?   @map("external_id") @db.VarChar(100)
+  externalSource String?   @map("external_source") @db.VarChar(50)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  league   League @relation(fields: [leagueId], references: [id])
+  homeTeam Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  @@index([scheduledTime], map: "idx_games_date")
+  @@index([status], map: "idx_games_status")
+  @@index([leagueId], map: "idx_games_league")
+  @@map("games")
+}
+
+model Standing {
+  id        Int      @id @default(autoincrement())
+  leagueId  Int      @map("league_id")
+  teamId    Int      @map("team_id")
+  season    Int
+  division  String?  @db.VarChar(50)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  pct       Decimal? @db.Decimal(4, 3)
+  gamesBack Decimal? @map("games_back") @db.Decimal(4, 1)
+  streak    String?  @db.VarChar(10)
+  last10    String?  @map("last_10") @db.VarChar(10)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  league League @relation(fields: [leagueId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@index([leagueId, season], map: "idx_standings_league_season")
+  @@map("standings")
+}
