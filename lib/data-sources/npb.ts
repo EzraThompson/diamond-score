@@ -270,7 +270,7 @@ async function fetchGameDetail(
   slug: string,        // e.g. "e-m-01"
   year: string,        // e.g. "2026"
   mmdd: string,        // e.g. "0221"
-  date: string,        // e.g. "2026-02-21"
+  _date: string,       // e.g. "2026-02-21"
 ): Promise<GameDetailResult | undefined> {
   const pageCacheKey = `npb:page:${year}:${mmdd}:${slug}`;
   const pageCached = gameCache.get<GameDetailResult>(pageCacheKey);
@@ -325,11 +325,6 @@ async function fetchGameDetail(
   const awayScores: (number | null)[] = [];
   const homeScores: (number | null)[] = [];
 
-  let awayHits: number | undefined;
-  let awayErrors: number | undefined;
-  let homeHits: number | undefined;
-  let homeErrors: number | undefined;
-
   const parseTotals = ($row: ReturnType<typeof $>) => {
     const totals = $row.find('td.total-2');
     const h = parseInt($(totals.get(0)).text().trim());
@@ -344,8 +339,8 @@ async function fetchGameDetail(
     },
   );
   const awayTotals = parseTotals($('#table_linescore tbody tr.top'));
-  awayHits = awayTotals.hits;
-  awayErrors = awayTotals.errors;
+  const awayHits = awayTotals.hits;
+  const awayErrors = awayTotals.errors;
 
   $('#table_linescore tbody tr.bottom td:not(.total-1):not(.total-2)').each(
     (_, td) => {
@@ -354,8 +349,8 @@ async function fetchGameDetail(
     },
   );
   const homeTotals = parseTotals($('#table_linescore tbody tr.bottom'));
-  homeHits = homeTotals.hits;
-  homeErrors = homeTotals.errors;
+  const homeHits = homeTotals.hits;
+  const homeErrors = homeTotals.errors;
 
   for (let i = 0; i < inningNums.length; i++) {
     linescore.push({
