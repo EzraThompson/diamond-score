@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     const divisions: MiLBDivisionGroup[] = [];
-    for (const [name, rows] of divMap) {
+    for (const [name, rows] of Array.from(divMap)) {
       if (name) divisions.push({ name, rows });
     }
 

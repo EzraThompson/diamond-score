@@ -47,7 +47,7 @@ export async function GET() {
       .map((d) => ({ name: d, rows: divMap.get(d)! }));
 
     // Any division not in the hardcoded order goes at the end (skip unnamed)
-    for (const [name, rows] of divMap) {
+    for (const [name, rows] of Array.from(divMap)) {
       if (name && !DIVISION_ORDER.includes(name)) {
         divisions.push({ name, rows });
       }
