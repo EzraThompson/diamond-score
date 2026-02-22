@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C2A0C"/>
+      <stop offset="100%" stop-color="#18A34A"/>
+    </linearGradient>
+  </defs>
+  <!-- Full-bleed background (no border radius — mask handles shape) -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- Content kept inside 80% safe zone (51px inset on each side) -->
+  <!-- Outer diamond — center (256,256), half-span 115 (fits within safe zone) -->
+  <polygon points="256,141 371,256 256,371 141,256" fill="white" opacity="0.95"/>
+  <!-- Basepath inner diamond — half-span 70 -->
+  <polygon points="256,186 326,256 256,326 186,256"
+           fill="none" stroke="#18A34A" stroke-width="9" stroke-linejoin="round"/>
+  <!-- Home plate -->
+  <circle cx="256" cy="360" r="10" fill="#18A34A"/>
+</svg>
