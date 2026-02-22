@@ -472,12 +472,12 @@ function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
       </div>
       <div className="divide-y divide-surface-100">
         {recent.map((play) => {
-          const halfLabel = play.half === 'top' ? '▲' : '▼';
+          const halfLabel = play.half === 'top' ? 'Top' : 'Bot';
           const colorClass = TICKER_EVENT_COLORS[play.event] ?? 'text-gray-600';
           return (
             <div key={play.id} className="flex items-start gap-2 px-3 py-2">
               <span className="text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0 mt-0.5 w-8">
-                {halfLabel}{play.inning}
+                {halfLabel} {play.inning}
               </span>
               <div className="flex-1 min-w-0">
                 <span className={`text-[11px] font-bold ${colorClass}`}>{play.event}</span>
@@ -532,7 +532,7 @@ function PlayByPlayTab({ plays }: { plays: PlayEvent[] }) {
         const key = `${play.inning}-${play.half}`;
         const showHeader = key !== lastKey;
         lastKey = key;
-        const halfLabel = play.half === 'top' ? '▲' : '▼';
+        const halfLabel = play.half === 'top' ? 'Top' : 'Bottom';
 
         return (
           <div key={play.id}>
