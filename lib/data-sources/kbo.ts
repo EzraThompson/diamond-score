@@ -77,16 +77,16 @@ interface KBOTeamMeta {
  * WO = Kiwoom Heroes, formerly Nexen/Woori Heroes; HT = KIA Tigers, formerly Haitai).
  */
 const TEAM_BY_CODE: Record<string, KBOTeamMeta> = {
-  'LG': { id: 1,  name: 'LG Twins',      abbreviation: 'LG',  primaryColor: '#C30452' },
-  'OB': { id: 2,  name: 'Doosan Bears',  abbreviation: 'OB',  primaryColor: '#131230' },
+  'LG': { id: 1,  name: 'LG Twins',      abbreviation: 'LGT', primaryColor: '#C30452' },
+  'OB': { id: 2,  name: 'Doosan Bears',  abbreviation: 'DSN', primaryColor: '#131230' },
   'HT': { id: 3,  name: 'KIA Tigers',    abbreviation: 'KIA', primaryColor: '#EA0029' },
-  'SS': { id: 4,  name: 'Samsung Lions', abbreviation: 'SS',  primaryColor: '#074CA1' },
-  'HH': { id: 5,  name: 'Hanwha Eagles', abbreviation: 'HH',  primaryColor: '#FF6600' },
+  'SS': { id: 4,  name: 'Samsung Lions', abbreviation: 'SAM', primaryColor: '#074CA1' },
+  'HH': { id: 5,  name: 'Hanwha Eagles', abbreviation: 'HNW', primaryColor: '#FF6600' },
   'SK': { id: 6,  name: 'SSG Landers',   abbreviation: 'SSG', primaryColor: '#CE0E2D' },
-  'LT': { id: 7,  name: 'Lotte Giants',  abbreviation: 'LT',  primaryColor: '#041E42' },
-  'WO': { id: 8,  name: 'Kiwoom Heroes', abbreviation: 'KW',  primaryColor: '#820024' },
-  'KT': { id: 9,  name: 'KT Wiz',        abbreviation: 'KT',  primaryColor: '#000000' },
-  'NC': { id: 10, name: 'NC Dinos',       abbreviation: 'NC',  primaryColor: '#315288' },
+  'LT': { id: 7,  name: 'Lotte Giants',  abbreviation: 'LOT', primaryColor: '#041E42' },
+  'WO': { id: 8,  name: 'Kiwoom Heroes', abbreviation: 'KWM', primaryColor: '#820024' },
+  'KT': { id: 9,  name: 'KT Wiz',        abbreviation: 'KTW', primaryColor: '#000000' },
+  'NC': { id: 10, name: 'NC Dinos',       abbreviation: 'NCD', primaryColor: '#315288' },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────

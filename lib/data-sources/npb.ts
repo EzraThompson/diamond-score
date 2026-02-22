@@ -79,52 +79,52 @@ interface NPBTeamMeta {
 const TEAM_BY_JA: Record<string, NPBTeamMeta> = {
   // ── Central League ─────────────────────────────────────────────────
   '読売ジャイアンツ': {
-    id: 1, name: 'Yomiuri Giants', abbreviation: 'G',
+    id: 1, name: 'Yomiuri Giants', abbreviation: 'GNT',
     primaryColor: '#F15A22', code: 'g',
   },
   '阪神タイガース': {
-    id: 2, name: 'Hanshin Tigers', abbreviation: 'T',
+    id: 2, name: 'Hanshin Tigers', abbreviation: 'HNS',
     primaryColor: '#FFE200', code: 't',
   },
   '横浜DeNAベイスターズ': {
-    id: 3, name: 'DeNA BayStars', abbreviation: 'DB',
+    id: 3, name: 'DeNA BayStars', abbreviation: 'DBS',
     primaryColor: '#003087', code: 'db',
   },
   '広島東洋カープ': {
-    id: 4, name: 'Hiroshima Carp', abbreviation: 'C',
+    id: 4, name: 'Hiroshima Carp', abbreviation: 'CAR',
     primaryColor: '#C8102E', code: 'c',
   },
   '中日ドラゴンズ': {
-    id: 5, name: 'Chunichi Dragons', abbreviation: 'D',
+    id: 5, name: 'Chunichi Dragons', abbreviation: 'DGN',
     primaryColor: '#003A78', code: 'd',
   },
   '東京ヤクルトスワローズ': {
-    id: 6, name: 'Tokyo Yakult Swallows', abbreviation: 'S',
+    id: 6, name: 'Tokyo Yakult Swallows', abbreviation: 'SWL',
     primaryColor: '#004098', code: 's',
   },
   // ── Pacific League ─────────────────────────────────────────────────
   'オリックス・バファローズ': {
-    id: 7, name: 'Orix Buffaloes', abbreviation: 'Bs',
+    id: 7, name: 'Orix Buffaloes', abbreviation: 'BUF',
     primaryColor: '#00356D', code: 'b',
   },
   '福岡ソフトバンクホークス': {
-    id: 8, name: 'SoftBank Hawks', abbreviation: 'H',
+    id: 8, name: 'SoftBank Hawks', abbreviation: 'HWK',
     primaryColor: '#FCC40D', code: 'h',
   },
   '東北楽天ゴールデンイーグルス': {
-    id: 9, name: 'Rakuten Eagles', abbreviation: 'E',
+    id: 9, name: 'Rakuten Eagles', abbreviation: 'EGL',
     primaryColor: '#9E1B32', code: 'e',
   },
   '埼玉西武ライオンズ': {
-    id: 10, name: 'Seibu Lions', abbreviation: 'L',
+    id: 10, name: 'Seibu Lions', abbreviation: 'LNS',
     primaryColor: '#00578A', code: 'l',
   },
   '千葉ロッテマリーンズ': {
-    id: 11, name: 'Lotte Marines', abbreviation: 'M',
+    id: 11, name: 'Lotte Marines', abbreviation: 'MRN',
     primaryColor: '#000000', code: 'm',
   },
   '北海道日本ハムファイターズ': {
-    id: 12, name: 'Nippon-Ham Fighters', abbreviation: 'F',
+    id: 12, name: 'Nippon-Ham Fighters', abbreviation: 'FGT',
     primaryColor: '#0C1C5F', code: 'f',
   },
 };

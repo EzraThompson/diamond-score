@@ -87,7 +87,7 @@ export default function TeamPicker({ selectedTeams, onToggle }: TeamPickerProps)
             >
               <TeamBadge
                 abbreviation={team.abbreviation}
-                primaryColor={isFav ? team.primaryColor : '#CBD5CB'}
+                primaryColor={team.primaryColor}
               />
               <span className="text-[8px] font-semibold text-gray-500 truncate w-full text-center leading-tight">
                 {team.abbreviation}

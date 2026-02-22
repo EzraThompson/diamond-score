@@ -307,8 +307,8 @@ export default function GameCard({ game }: { game: Game }) {
           </div>
         </div>
 
-        {/* Live: diamond */}
-        {isLive && game.runnersOn && (
+        {/* Live: diamond — only shown for leagues that provide count/runner data */}
+        {isLive && game.count && game.runnersOn && (
           <div className="flex flex-col items-center gap-1 flex-shrink-0 pl-2 border-l border-surface-200">
             <Diamond runners={game.runnersOn} size={32} />
             {game.currentPitcher && (
