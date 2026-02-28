@@ -23,8 +23,8 @@ export default function Onboarding() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
-      <div className="bg-surface-50 rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl border border-surface-200">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center px-4 pt-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div className="bg-surface-50 rounded-2xl w-full max-w-sm max-h-[85svh] flex flex-col shadow-2xl border border-surface-200">
         {/* Header */}
         <div className="px-5 pt-5 pb-3 flex-shrink-0">
           <div className="text-2xl mb-1">&#9918;</div>

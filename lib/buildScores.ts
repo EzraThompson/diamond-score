@@ -3,6 +3,7 @@ import { getMiLBGames } from './data-sources/milb';
 import { getNCAAGames } from './data-sources/ncaa';
 import { getNPBGames } from './data-sources/npb';
 import { getKBOGames } from './data-sources/kbo';
+import { getWBCGames } from './data-sources/wbc';
 import { logger } from './logger';
 import type { Game } from './types';
 
@@ -48,6 +49,7 @@ export const sourceHealth: Record<string, SourceHealth> = {
   ncaa: initialHealth(),
   npb:  initialHealth(),
   kbo:  initialHealth(),
+  wbc:  initialHealth(),
 };
 
 function recordSuccess(source: string): void {
@@ -99,12 +101,13 @@ async function fetchSource<T>(
 export async function buildScores(date: string): Promise<ScoresResult> {
   const start = Date.now();
 
-  const [mlbRes, milbRes, ncaaRes, npbRes, kboRes] = await Promise.all([
+  const [mlbRes, milbRes, ncaaRes, npbRes, kboRes, wbcRes] = await Promise.all([
     fetchSource('mlb',  () => getMLBGames(date)),
     fetchSource('milb', () => getMiLBGames(date)),
     fetchSource('ncaa', () => getNCAAGames(date)),
     fetchSource('npb',  () => getNPBGames(date)),
     fetchSource('kbo',  () => getKBOGames(date)),
+    fetchSource('wbc',  () => getWBCGames(date)),
   ]);
 
   const leagues: LeagueGroup[] = [];
@@ -190,6 +193,17 @@ export async function buildScores(date: string): Promise<ScoresResult> {
       games: [],
       defaultCollapsed: true, showTop25Filter: true,
       error: 'Data temporarily unavailable',
+    });
+  }
+
+  // ── WBC ──────────────────────────────────────────────────────────────
+  // WBC is a periodic tournament — only show the section when games exist.
+  // Failures are silent (no error card) since it's not always active.
+  if (wbcRes.ok && wbcRes.value.length > 0) {
+    leagues.push({
+      id: 20, name: 'World Baseball Classic', country: 'International',
+      games: wbcRes.value,
+      defaultCollapsed: false, showTop25Filter: false,
     });
   }
 

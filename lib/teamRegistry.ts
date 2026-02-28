@@ -1,5 +1,5 @@
 /**
- * Static registry of all teams across MLB, NPB, and KBO.
+ * Static registry of all teams across MLB, NPB, KBO, and WBC.
  * Abbreviations must exactly match what each data source returns in Team.abbreviation.
  */
 
@@ -69,6 +69,29 @@ export const ALL_TEAMS: RegistryTeam[] = [
   { abbreviation: 'KWM', name: 'Kiwoom Heroes',  primaryColor: '#820024', leagueId: 3, leagueName: 'KBO' },
   { abbreviation: 'KTW', name: 'KT Wiz',         primaryColor: '#000000', leagueId: 3, leagueName: 'KBO' },
   { abbreviation: 'NCD', name: 'NC Dinos',        primaryColor: '#315288', leagueId: 3, leagueName: 'KBO' },
+
+  // ── WBC (World Baseball Classic) — leagueId: 20 ──────────────────────
+  // Abbreviations match ESPN's WBC team abbreviations
+  { abbreviation: 'USA', name: 'United States',  primaryColor: '#002868', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'JPN', name: 'Japan',          primaryColor: '#BC002D', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'DOM', name: 'Dominican Rep.', primaryColor: '#002D62', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'PRI', name: 'Puerto Rico',    primaryColor: '#ED0C2D', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'MEX', name: 'Mexico',         primaryColor: '#006847', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'VEN', name: 'Venezuela',      primaryColor: '#CF142B', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'CUB', name: 'Cuba',           primaryColor: '#003087', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'KOR', name: 'South Korea',    primaryColor: '#CD2E3A', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'TAI', name: 'Chinese Taipei', primaryColor: '#003580', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'PAN', name: 'Panama',         primaryColor: '#DA121A', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'NED', name: 'Netherlands',    primaryColor: '#FF4B00', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'ITA', name: 'Italy',          primaryColor: '#009246', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'ISR', name: 'Israel',         primaryColor: '#003087', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'AUS', name: 'Australia',      primaryColor: '#00843D', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'COL', name: 'Colombia',       primaryColor: '#FCD116', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'CAN', name: 'Canada',         primaryColor: '#FF0000', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'NIC', name: 'Nicaragua',      primaryColor: '#003F87', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'GBR', name: 'Great Britain',  primaryColor: '#012169', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'CZE', name: 'Czech Republic', primaryColor: '#11457E', leagueId: 20, leagueName: 'WBC' },
+  { abbreviation: 'CHN', name: 'China',          primaryColor: '#DE2910', leagueId: 20, leagueName: 'WBC' },
 ];
 
 export function getTeamsByLeague(leagueId: number): RegistryTeam[] {

@@ -10,10 +10,11 @@ interface TeamPickerProps {
 }
 
 const LEAGUE_TABS = [
-  { id: 0, label: 'All' },
-  { id: 1, label: 'MLB' },
-  { id: 2, label: 'NPB' },
-  { id: 3, label: 'KBO' },
+  { id: 0,  label: 'All' },
+  { id: 1,  label: 'MLB' },
+  { id: 2,  label: 'NPB' },
+  { id: 3,  label: 'KBO' },
+  { id: 20, label: 'WBC' },
 ];
 
 export default function TeamPicker({ selectedTeams, onToggle }: TeamPickerProps) {
