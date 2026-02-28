@@ -40,7 +40,7 @@ export function GameCardSkeleton() {
 /**
  * A collapsed league section placeholder with N card skeletons.
  */
-export function LeagueSkeleton({ count = 3, name }: { count?: number; name?: string }) {
+export function LeagueSkeleton({ count = 3, name: _name }: { count?: number; name?: string }) {
   return (
     <section className="mb-4">
       {/* League header row */}
