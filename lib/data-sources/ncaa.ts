@@ -13,6 +13,8 @@
  */
 
 import { gameCache } from '../cache';
+import { logger } from '../logger';
+import { withRetry } from '../retry';
 import type {
   BatterLine,
   Game,
@@ -488,12 +490,18 @@ export async function getNCAAGames(date: string): Promise<Game[]> {
 
   // ESPN uses YYYYMMDD with no separator
   const espnDate = date.replace(/-/g, '');
+  const scoreboardUrl = `${ESPN_BASE}/scoreboard?dates=${espnDate}&limit=500`;
 
-  const res = await fetch(
-    `${ESPN_BASE}/scoreboard?dates=${espnDate}&limit=500`,
-    { cache: 'no-store' },
+  const res = await withRetry(
+    async () => {
+      const done = logger.timed('ncaa', scoreboardUrl);
+      const r = await fetch(scoreboardUrl, { cache: 'no-store' });
+      done({ status: r.status, error: r.ok ? undefined : `HTTP ${r.status}` });
+      if (!r.ok) throw new Error(`ESPN API ${r.status}: college-baseball scoreboard`);
+      return r;
+    },
+    { retries: 3, baseDelayMs: 500, source: 'ncaa', label: 'scoreboard' },
   );
-  if (!res.ok) throw new Error(`ESPN API ${res.status}: college-baseball scoreboard`);
 
   const data = (await res.json()) as ESPNScoreboard;
   const events = data.events ?? [];

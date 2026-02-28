@@ -5,6 +5,8 @@
  */
 
 import { gameCache, standingsCache } from '../cache';
+import { logger } from '../logger';
+import { withRetry } from '../retry';
 import type {
   BatterLine,
   Game,
@@ -367,9 +369,16 @@ function toPlayer(p?: { id: number; fullName: string }): PlayerInfo | undefined 
 }
 
 async function mlbFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`MLB API ${res.status}: ${url}`);
-  return res.json() as Promise<T>;
+  return withRetry(
+    async () => {
+      const done = logger.timed('mlb', url);
+      const res = await fetch(url, { cache: 'no-store' });
+      done({ status: res.status, error: res.ok ? undefined : `HTTP ${res.status}` });
+      if (!res.ok) throw new Error(`MLB API ${res.status}: ${url}`);
+      return res.json() as Promise<T>;
+    },
+    { retries: 3, baseDelayMs: 500, source: 'mlb', label: url },
+  );
 }
 
 // ── Public API ──────────────────────────────────────────────────────

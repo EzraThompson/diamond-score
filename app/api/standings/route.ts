@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getMLBStandings } from '@/lib/data-sources/mlb';
 import type { Standing } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 minutes
 
 // MLB season typically runs April–October.
 // In the offseason, return the most recent completed season.

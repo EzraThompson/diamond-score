@@ -26,6 +26,9 @@
 
 import { load } from 'cheerio';
 import { gameCache } from '../cache';
+import { logger } from '../logger';
+import { withRetry } from '../retry';
+import { throttle } from '../rateLimiter';
 import type {
   Game,
   GameDetail,
@@ -241,9 +244,17 @@ const FETCH_HEADERS = {
 };
 
 async function npbFetch(url: string): Promise<string> {
-  const res = await fetch(url, { headers: FETCH_HEADERS, cache: 'no-store' });
-  if (!res.ok) throw new Error(`NPB fetch ${res.status}: ${url}`);
-  return res.text();
+  return withRetry(
+    async () => {
+      await throttle(url);
+      const done = logger.timed('npb', url);
+      const res = await fetch(url, { headers: FETCH_HEADERS, cache: 'no-store' });
+      done({ status: res.status, error: res.ok ? undefined : `HTTP ${res.status}` });
+      if (!res.ok) throw new Error(`NPB fetch ${res.status}: ${url}`);
+      return res.text();
+    },
+    { retries: 3, baseDelayMs: 1000, source: 'npb', label: url },
+  );
 }
 
 // ── Game detail page parser ───────────────────────────────────────────

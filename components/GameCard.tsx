@@ -233,7 +233,7 @@ export default function GameCard({ game }: { game: Game }) {
         <div className="flex-1 min-w-0">
           {/* Away */}
           <div className="flex items-center gap-2.5 mb-1.5">
-            <TeamBadge abbreviation={game.awayTeam.abbreviation} primaryColor={game.awayTeam.primaryColor} />
+            <TeamBadge abbreviation={game.awayTeam.abbreviation} primaryColor={game.awayTeam.primaryColor} logoUrl={game.awayTeam.logoUrl} />
             <span className={`text-sm font-bold truncate flex-1 ${
               awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-400' : 'text-gray-500'
             }`}>
@@ -275,7 +275,7 @@ export default function GameCard({ game }: { game: Game }) {
           </div>
           {/* Home */}
           <div className="flex items-center gap-2.5">
-            <TeamBadge abbreviation={game.homeTeam.abbreviation} primaryColor={game.homeTeam.primaryColor} />
+            <TeamBadge abbreviation={game.homeTeam.abbreviation} primaryColor={game.homeTeam.primaryColor} logoUrl={game.homeTeam.logoUrl} />
             <span className={`text-sm font-bold truncate flex-1 ${
               homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-400' : 'text-gray-500'
             }`}>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMiLBStandings, MILB_LEVELS } from '@/lib/data-sources/milb';
 import type { Standing } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 minutes
 
 function currentSeason(): number {
   const now = new Date();

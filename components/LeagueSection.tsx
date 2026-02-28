@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Game } from '@/lib/types';
 import GameCard from './GameCard';
+import ErrorBoundary from './ErrorBoundary';
 
 interface LeagueSectionProps {
   name: string;
@@ -11,6 +12,10 @@ interface LeagueSectionProps {
   games: Game[];
   defaultCollapsed?: boolean;
   showTop25Filter?: boolean;
+  /** Set when the data source for this league had an error. */
+  error?: string;
+  /** True when games data is from a stale cache (not a fresh fetch). */
+  stale?: boolean;
 }
 
 export default function LeagueSection({
@@ -19,6 +24,8 @@ export default function LeagueSection({
   games,
   defaultCollapsed = false,
   showTop25Filter = false,
+  error,
+  stale,
 }: LeagueSectionProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [top25Only, setTop25Only] = useState(false);
@@ -39,6 +46,8 @@ export default function LeagueSection({
       ).length
     : 0;
 
+  const isUnavailable = !!error && games.length === 0;
+
   return (
     <section className="mb-4">
       <button
@@ -53,6 +62,9 @@ export default function LeagueSection({
         <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">
           {name}
         </h2>
+        {stale && !error && (
+          <span className="text-[9px] text-yellow-500 font-medium">cached</span>
+        )}
         {liveCount > 0 && (
           <span className="text-[10px] font-semibold text-live bg-live/10 px-1.5 py-0.5 rounded">
             {liveCount} live
@@ -78,7 +90,12 @@ export default function LeagueSection({
             )}
           </span>
         )}
-        <span className="text-xs text-gray-400">{visibleGames.length}</span>
+        {!isUnavailable && (
+          <span className="text-xs text-gray-400">{visibleGames.length}</span>
+        )}
+        {isUnavailable && (
+          <span className="text-[9px] text-red-400 font-medium">unavailable</span>
+        )}
         <svg
           className={`w-3.5 h-3.5 text-gray-400 transition-transform ${collapsed ? '-rotate-90' : ''}`}
           viewBox="0 0 24 24"
@@ -89,17 +106,45 @@ export default function LeagueSection({
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
+
       {!collapsed && (
         <div className="flex flex-col gap-2 px-4">
-          {visibleGames.length === 0 ? (
+          {/* Data source error with stale fallback message */}
+          {error && games.length > 0 && (
+            <p className="text-[10px] text-yellow-600 bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-1.5">
+              {error} — showing last known scores
+            </p>
+          )}
+
+          {/* Total failure: no games and error */}
+          {isUnavailable && (
+            <div className="flex flex-col items-center py-4 gap-1.5">
+              <span className="text-lg">&#128268;</span>
+              <p className="text-xs font-medium text-gray-500">{error}</p>
+              <p className="text-[10px] text-gray-400">Check back soon</p>
+            </div>
+          )}
+
+          {/* Top-25 filter produced no results */}
+          {!isUnavailable && visibleGames.length === 0 && games.length > 0 && (
             <p className="text-xs text-gray-400 py-2 text-center">
               No Top 25 games today
             </p>
-          ) : (
-            visibleGames.map((game) => (
-              <GameCard key={game.id} game={game} />
-            ))
           )}
+
+          {/* No games, no error */}
+          {!isUnavailable && games.length === 0 && !error && (
+            <p className="text-xs text-gray-400 py-2 text-center">
+              No games today
+            </p>
+          )}
+
+          {/* Game cards wrapped in error boundaries */}
+          {visibleGames.map((game) => (
+            <ErrorBoundary key={game.id} label={`${game.awayTeam.abbreviation} @ ${game.homeTeam.abbreviation}`}>
+              <GameCard game={game} />
+            </ErrorBoundary>
+          ))}
         </div>
       )}
     </section>

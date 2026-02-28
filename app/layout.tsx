@@ -4,6 +4,7 @@ import './globals.css';
 import BottomNav from '@/components/BottomNav';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { ToastProvider } from '@/components/Toast';
 import ThemeApplier from '@/components/ThemeApplier';
 import Onboarding from '@/components/Onboarding';
 import InstallPrompt from '@/components/InstallPrompt';
@@ -98,15 +99,17 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-surface text-gray-900">
         <SettingsProvider>
           <FavoritesProvider>
-            <ThemeApplier />
-            <Onboarding />
-            <div className="min-h-screen flex flex-col max-w-lg mx-auto">
-              <main className="flex-1 flex flex-col pb-16 overflow-hidden">
-                {children}
-              </main>
-              <BottomNav />
-            </div>
-            <InstallPrompt />
+            <ToastProvider>
+              <ThemeApplier />
+              <Onboarding />
+              <div className="min-h-screen flex flex-col max-w-lg mx-auto">
+                <main className="flex-1 flex flex-col pb-16 overflow-hidden">
+                  {children}
+                </main>
+                <BottomNav />
+              </div>
+              <InstallPrompt />
+            </ToastProvider>
           </FavoritesProvider>
         </SettingsProvider>
       </body>

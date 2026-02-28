@@ -3,6 +3,7 @@ import { getMiLBGames } from './data-sources/milb';
 import { getNCAAGames } from './data-sources/ncaa';
 import { getNPBGames } from './data-sources/npb';
 import { getKBOGames } from './data-sources/kbo';
+import { logger } from './logger';
 import type { Game } from './types';
 
 export interface LeagueGroup {
@@ -13,6 +14,10 @@ export interface LeagueGroup {
   games: Game[];
   defaultCollapsed: boolean;
   showTop25Filter: boolean;
+  /** Set when the source fetch failed. Games may be empty or stale. */
+  error?: string;
+  /** True when games come from stale cache rather than a fresh fetch. */
+  stale?: boolean;
 }
 
 export interface ScoresResult {
@@ -21,78 +26,197 @@ export interface ScoresResult {
   hasLive: boolean;
 }
 
+// ── Per-source health tracking (in-memory, per process) ─────────────
+
+export interface SourceHealth {
+  lastSuccessAt: number | null;  // epoch ms
+  lastErrorAt:   number | null;
+  lastError:     string | null;
+  consecutiveFails: number;
+}
+
+const initialHealth = (): SourceHealth => ({
+  lastSuccessAt: null,
+  lastErrorAt: null,
+  lastError: null,
+  consecutiveFails: 0,
+});
+
+export const sourceHealth: Record<string, SourceHealth> = {
+  mlb:  initialHealth(),
+  milb: initialHealth(),
+  ncaa: initialHealth(),
+  npb:  initialHealth(),
+  kbo:  initialHealth(),
+};
+
+function recordSuccess(source: string): void {
+  const h = sourceHealth[source];
+  if (!h) return;
+  h.lastSuccessAt = Date.now();
+  h.consecutiveFails = 0;
+  h.lastError = null;
+}
+
+function recordFailure(source: string, err: unknown): void {
+  const h = sourceHealth[source];
+  if (!h) return;
+  h.lastErrorAt = Date.now();
+  h.lastError = String(err);
+  h.consecutiveFails++;
+  logger.error(`${source} fetch failed`, {
+    source,
+    error: String(err),
+    consecutiveFails: h.consecutiveFails,
+  });
+}
+
+// ── Stale data fallback (stored after each successful buildScores) ───
+
+const staleLeagues = new Map<string, LeagueGroup[]>();  // key = date
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+async function fetchSource<T>(
+  source: string,
+  fn: () => Promise<T>,
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  const start = Date.now();
+  try {
+    const value = await fn();
+    recordSuccess(source);
+    logger.info(`${source} fetch ok`, { source, durationMs: Date.now() - start });
+    return { ok: true, value };
+  } catch (err) {
+    recordFailure(source, err);
+    logger.error(`${source} fetch error`, { source, durationMs: Date.now() - start, error: String(err) });
+    return { ok: false };
+  }
+}
+
+// ── buildScores ──────────────────────────────────────────────────────
+
 export async function buildScores(date: string): Promise<ScoresResult> {
-  const [mlbGames, milbGroups, ncaaGames, npbGames, kboGames] = await Promise.all([
-    getMLBGames(date),
-    getMiLBGames(date).catch(() => []),
-    getNCAAGames(date).catch(() => []),
-    getNPBGames(date).catch(() => []),
-    getKBOGames(date).catch(() => []),
+  const start = Date.now();
+
+  const [mlbRes, milbRes, ncaaRes, npbRes, kboRes] = await Promise.all([
+    fetchSource('mlb',  () => getMLBGames(date)),
+    fetchSource('milb', () => getMiLBGames(date)),
+    fetchSource('ncaa', () => getNCAAGames(date)),
+    fetchSource('npb',  () => getNPBGames(date)),
+    fetchSource('kbo',  () => getKBOGames(date)),
   ]);
 
   const leagues: LeagueGroup[] = [];
 
-  if (mlbGames.length > 0) {
+  // ── MLB ─────────────────────────────────────────────────────────────
+  if (mlbRes.ok) {
+    if (mlbRes.value.length > 0) {
+      leagues.push({
+        id: 1, name: 'MLB', country: 'USA', logoUrl: '/logos/mlb.svg',
+        games: mlbRes.value,
+        defaultCollapsed: true, showTop25Filter: false,
+      });
+    }
+  } else {
     leagues.push({
-      id: 1,
-      name: 'MLB',
-      country: 'USA',
-      logoUrl: '/logos/mlb.svg',
-      games: mlbGames,
-      defaultCollapsed: true,
-      showTop25Filter: false,
+      id: 1, name: 'MLB', country: 'USA', logoUrl: '/logos/mlb.svg',
+      games: [],
+      defaultCollapsed: false, showTop25Filter: false,
+      error: 'Data temporarily unavailable',
     });
   }
 
-  for (const { level, games } of milbGroups) {
+  // ── MiLB ────────────────────────────────────────────────────────────
+  if (milbRes.ok) {
+    for (const { level, games } of milbRes.value) {
+      leagues.push({
+        id: level.sportId, name: level.label, country: 'USA',
+        games,
+        defaultCollapsed: true, showTop25Filter: false,
+      });
+    }
+  }
+  // MiLB failure is silent — it's supplementary data
+
+  // ── NPB ─────────────────────────────────────────────────────────────
+  if (npbRes.ok) {
+    if (npbRes.value.length > 0) {
+      leagues.push({
+        id: 2, name: 'NPB', country: 'Japan', logoUrl: '/logos/npb.svg',
+        games: npbRes.value,
+        defaultCollapsed: false, showTop25Filter: false,
+      });
+    }
+  } else {
     leagues.push({
-      id: level.sportId,
-      name: level.label,
-      country: 'USA',
-      logoUrl: undefined,
-      games,
-      defaultCollapsed: true,
-      showTop25Filter: false,
+      id: 2, name: 'NPB', country: 'Japan', logoUrl: '/logos/npb.svg',
+      games: [],
+      defaultCollapsed: false, showTop25Filter: false,
+      error: 'Data temporarily unavailable',
     });
   }
 
-  if (npbGames.length > 0) {
+  // ── KBO ─────────────────────────────────────────────────────────────
+  if (kboRes.ok) {
+    if (kboRes.value.length > 0) {
+      leagues.push({
+        id: 3, name: 'KBO', country: 'South Korea', logoUrl: '/logos/kbo.svg',
+        games: kboRes.value,
+        defaultCollapsed: false, showTop25Filter: false,
+      });
+    }
+  } else {
     leagues.push({
-      id: 2,
-      name: 'NPB',
-      country: 'Japan',
-      logoUrl: '/logos/npb.svg',
-      games: npbGames,
-      defaultCollapsed: false,
-      showTop25Filter: false,
+      id: 3, name: 'KBO', country: 'South Korea', logoUrl: '/logos/kbo.svg',
+      games: [],
+      defaultCollapsed: false, showTop25Filter: false,
+      error: 'Data temporarily unavailable',
     });
   }
 
-  if (kboGames.length > 0) {
+  // ── NCAA ─────────────────────────────────────────────────────────────
+  if (ncaaRes.ok) {
+    if (ncaaRes.value.length > 0) {
+      leagues.push({
+        id: 16, name: 'College Baseball', country: 'USA',
+        games: ncaaRes.value,
+        defaultCollapsed: true, showTop25Filter: true,
+      });
+    }
+  } else {
     leagues.push({
-      id: 3,
-      name: 'KBO',
-      country: 'South Korea',
-      logoUrl: '/logos/kbo.svg',
-      games: kboGames,
-      defaultCollapsed: false,
-      showTop25Filter: false,
+      id: 16, name: 'College Baseball', country: 'USA',
+      games: [],
+      defaultCollapsed: true, showTop25Filter: true,
+      error: 'Data temporarily unavailable',
     });
   }
 
-  if (ncaaGames.length > 0) {
-    leagues.push({
-      id: 16,
-      name: 'College Baseball',
-      country: 'USA',
-      logoUrl: undefined,
-      games: ncaaGames,
-      defaultCollapsed: true,
-      showTop25Filter: true,
-    });
+  // ── Stale fallback for error leagues ─────────────────────────────────
+  const prevLeagues = staleLeagues.get(date);
+  if (prevLeagues) {
+    for (const league of leagues) {
+      if (league.error) {
+        const stale = prevLeagues.find((l) => l.id === league.id);
+        if (stale?.games.length) {
+          league.games = stale.games;
+          league.stale = true;
+          league.error = 'Data may be delayed';
+        }
+      }
+    }
+  }
+
+  // Cache successful result for future stale lookups
+  const hasAnySuccess = mlbRes.ok || npbRes.ok || kboRes.ok || ncaaRes.ok;
+  if (hasAnySuccess) {
+    staleLeagues.set(date, leagues.filter((l) => !l.error));
   }
 
   const hasLive = leagues.some((l) => l.games.some((g) => g.status === 'live'));
+
+  logger.info('buildScores complete', { date, durationMs: Date.now() - start, leagueCount: leagues.length, hasLive });
 
   return { date, leagues, hasLive };
 }
