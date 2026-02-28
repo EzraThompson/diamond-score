@@ -77,7 +77,7 @@ export default function TeamPicker({ selectedTeams, onToggle }: TeamPickerProps)
           const isFav = selectedTeams.has(team.abbreviation);
           return (
             <button
-              key={team.abbreviation}
+              key={`${team.leagueId}-${team.abbreviation}`}
               onClick={() => onToggle(team.abbreviation)}
               title={team.name}
               className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-all ${
