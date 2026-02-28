@@ -25,6 +25,9 @@
  */
 
 import { gameCache } from '../cache';
+import { logger } from '../logger';
+import { withRetry } from '../retry';
+import { throttle } from '../rateLimiter';
 import type {
   Game,
   GameDetail,
@@ -148,15 +151,24 @@ async function kboPost<T = unknown>(
   path: string,
   params: Record<string, string>,
 ): Promise<T> {
-  const body = new URLSearchParams(params).toString();
-  const res = await fetch(`${KBO_BASE}${path}`, {
-    method: 'POST',
-    headers: POST_HEADERS,
-    body,
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`KBO POST ${res.status}: ${path}`);
-  return res.json() as Promise<T>;
+  const url = `${KBO_BASE}${path}`;
+  return withRetry(
+    async () => {
+      await throttle(url);
+      const done = logger.timed('kbo', url);
+      const body = new URLSearchParams(params).toString();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: POST_HEADERS,
+        body,
+        cache: 'no-store',
+      });
+      done({ status: res.status, error: res.ok ? undefined : `HTTP ${res.status}` });
+      if (!res.ok) throw new Error(`KBO POST ${res.status}: ${path}`);
+      return res.json() as Promise<T>;
+    },
+    { retries: 3, baseDelayMs: 1000, source: 'kbo', label: path },
+  );
 }
 
 // ── Linescore table parser ─────────────────────────────────────────────

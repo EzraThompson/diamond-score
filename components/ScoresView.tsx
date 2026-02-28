@@ -7,12 +7,23 @@ import type { ScoresResult } from '@/lib/buildScores';
 import { useLiveStream } from '@/hooks/useLiveStream';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useToast } from './Toast';
 import Header from './Header';
 import DateStrip from './DateStrip';
 import LeagueSection from './LeagueSection';
 import FollowingSection from './FollowingSection';
+import ErrorBoundary from './ErrorBoundary';
+import { LeagueSkeleton } from './GameCardSkeleton';
 
 const RETRY_INTERVAL = 30_000;
+
+// Skeleton placeholders for initial load — one per expected league
+const SKELETON_LEAGUES = [
+  { name: 'MLB',              count: 3 },
+  { name: 'NPB',              count: 2 },
+  { name: 'KBO',              count: 2 },
+  { name: 'College Baseball', count: 2 },
+];
 
 export default function ScoresView() {
   const [date, setDate] = useState(() => new Date());
@@ -22,9 +33,11 @@ export default function ScoresView() {
   const [pulling, setPulling] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasShownConnectionError = useRef(false);
 
   const { favoriteTeams, isLeagueFav } = useFavorites();
   const { settings } = useSettings();
+  const { toast } = useToast();
 
   const dateStr = format(date, 'yyyy-MM-dd');
 
@@ -33,6 +46,7 @@ export default function ScoresView() {
     setLoading(true);
     setData(null);
     setError(null);
+    hasShownConnectionError.current = false;
   }, [dateStr]);
 
   // ── SSE callbacks ────────────────────────────────────────────────
@@ -42,6 +56,7 @@ export default function ScoresView() {
     setLoading(false);
     setError(null);
     setLastSync(new Date());
+    hasShownConnectionError.current = false;
   }, []);
 
   const handleUpdate = useCallback((changedGames: Game[], hasLive: boolean) => {
@@ -74,13 +89,19 @@ export default function ScoresView() {
       const json: ScoresResult = await res.json();
       setData(json);
       setLastSync(new Date());
+      hasShownConnectionError.current = false;
     } catch (err) {
       setError('Failed to load scores');
       console.error(err);
+      // Show toast only once per error streak (avoid spam during retries)
+      if (!hasShownConnectionError.current) {
+        hasShownConnectionError.current = true;
+        toast('Connection issue — retrying automatically', 'warn');
+      }
     } finally {
       setLoading(false);
     }
-  }, [dateStr]);
+  }, [dateStr, toast]);
 
   // Retry on error
   useEffect(() => {
@@ -146,6 +167,7 @@ export default function ScoresView() {
   ) ?? [];
 
   const totalGames = visibleLeagues.reduce((s, l) => s + l.games.length, 0);
+  const allLeaguesErrored = data ? visibleLeagues.every((l) => !!l.error && l.games.length === 0) : false;
 
   return (
     <div ref={containerRef} className="flex flex-col min-h-0">
@@ -161,15 +183,10 @@ export default function ScoresView() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto pt-2 pb-4">
-        {loading && !data && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-gray-500">Loading scores...</p>
-          </div>
-        )}
-
+        {/* Full-page error (no data at all) */}
         {error && !data && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <span className="text-3xl">&#128268;</span>
             <p className="text-sm text-red-400">{error}</p>
             <button
               onClick={() => fetchScores(true)}
@@ -180,7 +197,17 @@ export default function ScoresView() {
           </div>
         )}
 
-        {data && totalGames === 0 && (
+        {/* Loading skeletons — shown instead of spinner on first load */}
+        {loading && !data && !error && (
+          <>
+            {SKELETON_LEAGUES.map((s) => (
+              <LeagueSkeleton key={s.name} name={s.name} count={s.count} />
+            ))}
+          </>
+        )}
+
+        {/* No games today (data loaded, nothing scheduled, no errors) */}
+        {data && !loading && totalGames === 0 && !allLeaguesErrored && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
             <span className="text-3xl">&#9918;</span>
             <p className="text-sm text-gray-500">No games scheduled</p>
@@ -190,22 +217,27 @@ export default function ScoresView() {
 
         {/* Following section */}
         {data && favoriteTeams.size > 0 && (
-          <FollowingSection
-            leagues={visibleLeagues}
-            favoriteTeams={favoriteTeams}
-          />
+          <ErrorBoundary label="Following">
+            <FollowingSection
+              leagues={visibleLeagues}
+              favoriteTeams={favoriteTeams}
+            />
+          </ErrorBoundary>
         )}
 
-        {/* All leagues */}
+        {/* All leagues — each wrapped in an error boundary */}
         {visibleLeagues.map((league) => (
-          <LeagueSection
-            key={league.id}
-            name={league.name}
-            logoUrl={league.logoUrl}
-            games={league.games}
-            defaultCollapsed={isLeagueFav(league.id) ? false : league.defaultCollapsed}
-            showTop25Filter={league.showTop25Filter}
-          />
+          <ErrorBoundary key={league.id} label={league.name}>
+            <LeagueSection
+              name={league.name}
+              logoUrl={league.logoUrl}
+              games={league.games}
+              defaultCollapsed={isLeagueFav(league.id) ? false : league.defaultCollapsed}
+              showTop25Filter={league.showTop25Filter}
+              error={league.error}
+              stale={league.stale}
+            />
+          </ErrorBoundary>
         ))}
 
         {/* Sync indicator */}
