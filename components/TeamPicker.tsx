@@ -10,10 +10,11 @@ interface TeamPickerProps {
 }
 
 const LEAGUE_TABS = [
-  { id: 0, label: 'All' },
-  { id: 1, label: 'MLB' },
-  { id: 2, label: 'NPB' },
-  { id: 3, label: 'KBO' },
+  { id: 0,  label: 'All' },
+  { id: 1,  label: 'MLB' },
+  { id: 2,  label: 'NPB' },
+  { id: 3,  label: 'KBO' },
+  { id: 20, label: 'WBC' },
 ];
 
 export default function TeamPicker({ selectedTeams, onToggle }: TeamPickerProps) {
@@ -71,12 +72,12 @@ export default function TeamPicker({ selectedTeams, onToggle }: TeamPickerProps)
       </div>
 
       {/* Team grid */}
-      <div className="grid grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
+      <div className="grid grid-cols-5 gap-2 max-h-44 overflow-y-auto pr-1">
         {filtered.map((team) => {
           const isFav = selectedTeams.has(team.abbreviation);
           return (
             <button
-              key={team.abbreviation}
+              key={`${team.leagueId}-${team.abbreviation}`}
               onClick={() => onToggle(team.abbreviation)}
               title={team.name}
               className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-all ${

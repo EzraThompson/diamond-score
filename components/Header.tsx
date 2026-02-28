@@ -12,13 +12,19 @@ export default function Header({ date, onDateChange }: HeaderProps) {
     <header className="sticky top-0 z-40 bg-surface-50/95 backdrop-blur-sm border-b border-surface-200">
       <div className="flex items-center justify-between px-4 h-12 max-w-lg mx-auto">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-              <circle cx="12" cy="12" r="2.5" />
-              <path d="M12 6v2M12 16v2M6 12h2M16 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            </svg>
-          </div>
+          <svg width="28" height="28" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '8px', display: 'block', flexShrink: 0 }}>
+            <rect width="52" height="52" fill="#1a2c18"/>
+            <line x1="14" y1="0" x2="14" y2="52" stroke="rgba(210,240,200,0.3)" strokeWidth="1"/>
+            <line x1="38" y1="0" x2="38" y2="52" stroke="rgba(210,240,200,0.3)" strokeWidth="1"/>
+            <line x1="0" y1="14" x2="52" y2="14" stroke="rgba(210,240,200,0.3)" strokeWidth="1"/>
+            <line x1="0" y1="38" x2="52" y2="38" stroke="rgba(210,240,200,0.3)" strokeWidth="1"/>
+            <path d="M26 5.5 L46.5 26 L26 46.5 L5.5 26 Z" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" fill="none"/>
+            <rect x="23.2" y="2.7" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
+            <rect x="43.7" y="23.2" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
+            <rect x="23.2" y="43.7" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
+            <rect x="2.7" y="23.2" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
+            <circle cx="26" cy="26" r="1.8" fill="rgba(255,255,255,0.7)"/>
+          </svg>
           <h1 className="text-base font-extrabold tracking-tight text-gray-900">DiamondScore</h1>
         </div>
         <button

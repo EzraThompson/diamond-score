@@ -1,16 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="192" y2="192" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0C2A0C"/>
-      <stop offset="100%" stop-color="#18A34A"/>
-    </linearGradient>
-  </defs>
-  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
-  <!-- Baseball diamond outer field — center (96,96), half-span 55 -->
-  <polygon points="96,41 151,96 96,151 41,96" fill="white" opacity="0.95"/>
-  <!-- Basepath inner diamond — half-span 34 -->
-  <polygon points="96,62 130,96 96,130 62,96"
-           fill="none" stroke="#18A34A" stroke-width="4" stroke-linejoin="round"/>
-  <!-- Home plate -->
-  <circle cx="96" cy="144" r="5" fill="#18A34A"/>
+  <rect width="192" height="192" rx="40" fill="#1a2c18"/>
+  <!-- Grid lines: scaled 52→192, grid at 14→51.7, 38→140.3 -->
+  <line x1="0"   y1="51.7" x2="192" y2="51.7" stroke="rgba(210,240,200,0.24)" stroke-width="2.3"/>
+  <line x1="0"   y1="140.3" x2="192" y2="140.3" stroke="rgba(210,240,200,0.24)" stroke-width="2.3"/>
+  <line x1="51.7" y1="0"  x2="51.7" y2="192" stroke="rgba(210,240,200,0.24)" stroke-width="2.3"/>
+  <line x1="140.3" y1="0" x2="140.3" y2="192" stroke="rgba(210,240,200,0.24)" stroke-width="2.3"/>
+  <!-- Diamond fill -->
+  <path d="M96 20.3 L171.7 96 L96 171.7 L20.3 96 Z" fill="rgba(220,248,210,0.06)"/>
+  <!-- Diamond outline -->
+  <path d="M96 20.3 L171.7 96 L96 171.7 L20.3 96 Z"
+        stroke="rgba(220,248,210,0.82)" stroke-width="5.2"
+        stroke-linejoin="round" fill="none"/>
+  <!-- Inner foul lines -->
+  <line x1="96" y1="171.7" x2="171.7" y2="96" stroke="rgba(220,248,210,0.13)" stroke-width="1.8"/>
+  <line x1="96" y1="171.7" x2="20.3"  y2="96" stroke="rgba(220,248,210,0.13)" stroke-width="1.8"/>
+  <!-- Base squares: scaled 5.6→20.7, 23.2→85.5, 2.8→10.3, 43.7→161.2 -->
+  <!-- Top (2nd base) -->
+  <rect x="85.5" y="10.3" width="20.7" height="20.7" rx="3.7"
+        fill="rgba(220,248,210,0.14)" stroke="rgba(220,248,210,0.72)" stroke-width="4.1"/>
+  <!-- Right (1st base) -->
+  <rect x="161.2" y="85.5" width="20.7" height="20.7" rx="3.7"
+        fill="rgba(220,248,210,0.14)" stroke="rgba(220,248,210,0.64)" stroke-width="4.1"/>
+  <!-- Left (3rd base) -->
+  <rect x="10.3" y="85.5" width="20.7" height="20.7" rx="3.7"
+        fill="rgba(220,248,210,0.14)" stroke="rgba(220,248,210,0.64)" stroke-width="4.1"/>
+  <!-- Bottom (home plate) -->
+  <rect x="85.5" y="161.2" width="20.7" height="20.7" rx="3.7"
+        fill="rgba(220,248,210,0.22)" stroke="rgba(220,248,210,0.85)" stroke-width="4.8"/>
+  <!-- Pitcher's mound -->
+  <circle cx="96" cy="96" r="5.2" fill="rgba(220,248,210,0.3)"/>
 </svg>

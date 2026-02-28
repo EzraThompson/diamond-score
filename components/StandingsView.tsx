@@ -18,7 +18,7 @@ interface StandingsData {
   divisions: DivisionGroup[];
 }
 
-type LeagueTab = 'mlb' | 'milb' | 'ncaa' | 'npb' | 'kbo';
+type LeagueTab = 'mlb' | 'milb' | 'ncaa' | 'npb' | 'kbo' | 'wbc';
 
 interface MiLBLevel {
   id: number;
@@ -39,7 +39,19 @@ const LEAGUE_TABS: { id: LeagueTab; label: string }[] = [
   { id: 'ncaa', label: 'NCAA' },
   { id: 'npb',  label: 'NPB'  },
   { id: 'kbo',  label: 'KBO'  },
+  { id: 'wbc',  label: 'WBC'  },
 ];
+
+// ── WBC types ───────────────────────────────────────────────────────────
+
+interface WBCPoolGroup {
+  name: string;
+  rows: Standing[];
+}
+
+interface WBCStandingsData {
+  pools: WBCPoolGroup[];
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -295,6 +307,44 @@ function NCAATab({
   );
 }
 
+// ── WBC ────────────────────────────────────────────────────────────────
+
+function WBCTab() {
+  const [data, setData] = useState<WBCStandingsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/standings/wbc')
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json() as Promise<WBCStandingsData>;
+      })
+      .then(setData)
+      .catch(() => setError('Failed to load standings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
+  if (!data?.pools.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-2">
+        <p className="text-sm text-gray-500">WBC standings not available</p>
+        <p className="text-xs text-gray-400">Tournament may not be active</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-3 pb-4">
+      {data.pools.map((pool) => (
+        <DivisionTable key={pool.name} division={pool} playoffSpots={2} />
+      ))}
+    </div>
+  );
+}
+
 // ── Shared states ──────────────────────────────────────────────────────
 
 function LoadingState() {
@@ -341,7 +391,7 @@ export default function StandingsView() {
   const [error, setError]           = useState<string | null>(null);
 
   useEffect(() => {
-    if (leagueTab === 'npb' || leagueTab === 'kbo' || leagueTab === 'ncaa') {
+    if (leagueTab === 'npb' || leagueTab === 'kbo' || leagueTab === 'ncaa' || leagueTab === 'wbc') {
       setLoading(false);
       setData(null);
       setError(null);
@@ -422,13 +472,16 @@ export default function StandingsView() {
           <NCAATab favoriteTeams={favoriteTeams} toggleTeam={toggleTeam} />
         )}
 
+        {/* WBC: pool standings */}
+        {leagueTab === 'wbc' && <WBCTab />}
+
         {/* NPB / KBO: not yet available */}
         {(leagueTab === 'npb' || leagueTab === 'kbo') && (
           <ComingSoon league={leagueTab.toUpperCase()} />
         )}
 
         {/* MLB / MiLB */}
-        {leagueTab !== 'npb' && leagueTab !== 'kbo' && leagueTab !== 'ncaa' && (
+        {leagueTab !== 'npb' && leagueTab !== 'kbo' && leagueTab !== 'ncaa' && leagueTab !== 'wbc' && (
           <>
             {loading && <LoadingState />}
             {error && <ErrorState message={error} />}
