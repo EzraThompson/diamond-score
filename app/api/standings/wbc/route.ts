@@ -51,11 +51,6 @@ function stat(entry: ESPNEntry, name: string): number {
   return entry.stats.find((s) => s.name === name)?.value ?? 0;
 }
 
-function statStr(entry: ESPNEntry, name: string): string {
-  const s = entry.stats.find((st) => st.name === name);
-  return s?.displayValue ?? String(s?.value ?? '');
-}
-
 function parseEntry(entry: ESPNEntry): Standing {
   const wins   = Math.round(stat(entry, 'wins'));
   const losses = Math.round(stat(entry, 'losses'));
