@@ -39,6 +39,12 @@ interface ESPNStandingsResponse {
   children?: ESPNGroup[];
 }
 
+// ── Abbreviation normalization ──────────────────────────────────────────
+// ESPN uses different abbreviations for some WBC teams than our registry.
+const ESPN_ABBR_MAP: Record<string, string> = {
+  COL: 'CLM', // Colombia — COL conflicts with MLB Colorado Rockies
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function stat(entry: ESPNEntry, name: string): number {
@@ -60,11 +66,12 @@ function parseEntry(entry: ESPNEntry): Standing {
   // (caller will subtract the leader's GB from all rows to make the leader "0")
   const gb = stat(entry, 'gamesBehind');
 
+  const abbreviation = ESPN_ABBR_MAP[entry.team.abbreviation] ?? entry.team.abbreviation;
   return {
     team: {
       id: parseInt(entry.team.id) || 0,
       name: entry.team.displayName,
-      abbreviation: entry.team.abbreviation,
+      abbreviation,
       primaryColor: entry.team.color ? `#${entry.team.color}` : undefined,
       logoUrl: entry.team.logos?.[0]?.href,
     },

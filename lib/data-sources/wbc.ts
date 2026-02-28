@@ -26,6 +26,12 @@ import type {
 const ESPN_BASE =
   'https://site.api.espn.com/apis/site/v2/sports/baseball/wbc';
 
+// ESPN uses different abbreviations for some WBC teams than our registry.
+// Map ESPN abbreviation → registry abbreviation.
+const ESPN_ABBR_MAP: Record<string, string> = {
+  COL: 'CLM', // Colombia — COL conflicts with MLB Colorado Rockies
+};
+
 export const WBC_LEAGUE: League = {
   id: 20,
   name: 'World Baseball Classic',
@@ -120,10 +126,11 @@ function parseRecord(records?: { name: string; summary: string }[]): { wins?: nu
 }
 
 function parseTeam(c: ESPNCompetitor): Team {
+  const abbreviation = ESPN_ABBR_MAP[c.team.abbreviation] ?? c.team.abbreviation;
   return {
     id: parseInt(c.team.id),
     name: c.team.displayName,
-    abbreviation: c.team.abbreviation,
+    abbreviation,
     logoUrl: c.team.logo,
     primaryColor: c.team.color ? `#${c.team.color}` : undefined,
     ...parseRecord(c.records),
