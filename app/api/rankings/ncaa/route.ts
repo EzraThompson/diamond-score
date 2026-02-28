@@ -45,6 +45,8 @@ function parseRecord(recordSummary?: string): { wins: number; losses: number } {
 
 // ── Route ──────────────────────────────────────────────────────────────
 
+export const revalidate = 3600; // 1 hour — rankings update weekly
+
 export async function GET() {
   const cacheKey = 'ncaa:rankings';
   const cached = gameCache.get<NCAARankingsData>(cacheKey);
@@ -53,7 +55,7 @@ export async function GET() {
   try {
     const res = await fetch(
       'https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/rankings',
-      { cache: 'no-store' },
+      { next: { revalidate: 3600 } },
     );
     if (!res.ok) throw new Error(`ESPN rankings ${res.status}`);
 

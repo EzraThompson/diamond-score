@@ -146,6 +146,19 @@ const pwaConfig = withPWA({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      // MLB & MiLB team logos
+      { protocol: 'https', hostname: 'www.mlbstatic.com' },
+      // NPB team logos
+      { protocol: 'https', hostname: 'npb.jp' },
+      // KBO team emblems
+      { protocol: 'https', hostname: '6ptotvmi5753.edge.naverncp.com' },
+      // NCAA / ESPN logos
+      { protocol: 'https', hostname: 'a.espncdn.com' },
+    ],
+  },
+};
 
 export default pwaConfig(nextConfig);
