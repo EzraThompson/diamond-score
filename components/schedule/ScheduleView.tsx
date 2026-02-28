@@ -9,10 +9,11 @@ import MonthCalendar from './MonthCalendar';
 import LeagueSection from '@/components/LeagueSection';
 
 const LEAGUE_CHIPS: { id: number; label: string }[] = [
-  { id: 0, label: 'All' },
-  { id: 1, label: 'MLB' },
-  { id: 2, label: 'NPB' },
-  { id: 3, label: 'KBO' },
+  { id: 0,  label: 'All' },
+  { id: 1,  label: 'MLB' },
+  { id: 2,  label: 'NPB' },
+  { id: 3,  label: 'KBO' },
+  { id: 20, label: 'WBC' },
 ];
 
 export default function ScheduleView() {
