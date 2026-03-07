@@ -102,3 +102,14 @@ model Standing {
   @@index([leagueId, season], map: "idx_standings_league_season")
   @@map("standings")
 }
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  message   String
+  page      String?  @db.VarChar(200)
+  gameId    String?  @map("game_id") @db.VarChar(50)
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("feedback")
+}

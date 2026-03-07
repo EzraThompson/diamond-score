@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Diamond from '@/components/Diamond';
 import TeamBadge from '@/components/TeamBadge';
+import FeedbackModal from '@/components/FeedbackModal';
 import type { GameDetail, BatterLine, PitcherLine, PlayEvent, ScheduleNavGame } from '@/lib/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -659,6 +660,7 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>('linescore');
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const fetchDetail = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -715,9 +717,25 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
         {tab === 'linescore' && <LinescoreTab detail={detail} />}
         {tab === 'boxscore' && <BoxScoreTab detail={detail} />}
         {tab === 'pbp' && <PlayByPlayTab plays={detail.plays ?? []} />}
+
+        <div className="flex justify-center py-4">
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="text-[11px] text-gray-400 hover:text-gray-500 transition-colors"
+          >
+            Something look wrong?
+          </button>
+        </div>
       </div>
 
       <PrevNextNav detail={detail} />
+
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        page={tab}
+        gameId={String(id)}
+      />
     </div>
   );
 }

@@ -27,6 +27,20 @@ export default function Diamond({ runners, size = 28 }: DiamondProps) {
         stroke="#374151"
         strokeWidth="1"
       />
+      {/* White backing to mask the diamond outline behind each base */}
+      {bases.map((b) => (
+        <rect
+          key={`${b.label}-bg`}
+          x={b.x - baseSize / 2}
+          y={b.y - baseSize / 2}
+          width={baseSize}
+          height={baseSize}
+          rx={1}
+          transform={`rotate(45 ${b.x} ${b.y})`}
+          fill="white"
+          stroke="none"
+        />
+      ))}
       {bases.map((b) => (
         <rect
           key={b.label}
@@ -36,8 +50,8 @@ export default function Diamond({ runners, size = 28 }: DiamondProps) {
           height={baseSize}
           rx={1}
           transform={`rotate(45 ${b.x} ${b.y})`}
-          fill={b.on ? '#f59e0b' : 'transparent'}
-          stroke={b.on ? '#f59e0b' : '#374151'}
+          fill={b.on ? '#f59e0b' : 'white'}
+          stroke="#374151"
           strokeWidth="1.5"
         />
       ))}
