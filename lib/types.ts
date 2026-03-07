@@ -93,6 +93,8 @@ export interface Standing {
   gamesBack: number;
   streak: string;
   last10: string;
+  runsScored?: number;
+  runsAllowed?: number;
 }
 
 // ── Game detail (live feed enriched) ────────────────────────────────

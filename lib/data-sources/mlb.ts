@@ -295,6 +295,8 @@ interface MLBStandingsResponse {
       records: {
         splitRecords: { type: string; wins: number; losses: number }[];
       };
+      runsScored?: number;
+      runsAllowed?: number;
     }[];
   }[];
 }
@@ -538,6 +540,8 @@ export async function getMLBStandings(season: number): Promise<Standing[]> {
         gamesBack: rec.gamesBack === '-' ? 0 : parseFloat(rec.gamesBack),
         streak: rec.streak.streakCode,
         last10: last10 ? `${last10.wins}-${last10.losses}` : '',
+        runsScored: rec.runsScored,
+        runsAllowed: rec.runsAllowed,
       });
     }
   }

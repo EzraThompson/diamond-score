@@ -90,9 +90,13 @@ function StarIcon({ filled }: { filled: boolean }) {
 function DivisionTable({
   division,
   playoffSpots = 1,
+  showRD = false,
+  showPythag = false,
 }: {
   division: DivisionGroup;
   playoffSpots?: number;
+  showRD?: boolean;
+  showPythag?: boolean;
 }) {
   return (
     <div className="mb-4">
@@ -109,13 +113,40 @@ function DivisionTable({
               <th className="text-center py-2 px-2 font-semibold">L</th>
               <th className="text-center py-2 px-2 font-semibold">PCT</th>
               <th className="text-center py-2 px-2 font-semibold">GB</th>
+              {showRD && <th className="text-center py-2 px-2 font-semibold">RD</th>}
               <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">L10</th>
               <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">STK</th>
+              {showPythag && (
+                <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell" title="Pythagorean W-L">xW-L</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-200">
             {division.rows.map((row, i) => {
               const inPlayoffs = i < playoffSpots;
+
+              // Run Difference
+              const rd =
+                showRD && row.runsScored != null && row.runsAllowed != null
+                  ? row.runsScored - row.runsAllowed
+                  : null;
+
+              // Pythagorean W-L
+              let pythagStr = '—';
+              if (
+                showPythag &&
+                row.runsScored != null &&
+                row.runsAllowed != null &&
+                row.runsScored + row.runsAllowed > 0
+              ) {
+                const games = row.wins + row.losses;
+                const rs2 = row.runsScored ** 2;
+                const ra2 = row.runsAllowed ** 2;
+                const xPct = rs2 / (rs2 + ra2);
+                const xW = Math.round(xPct * games);
+                pythagStr = `${xW}-${games - xW}`;
+              }
+
               return (
                 <tr
                   key={row.team.id}
@@ -156,6 +187,21 @@ function DivisionTable({
                   <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500">
                     {row.gamesBack === 0 ? '—' : row.gamesBack}
                   </td>
+                  {showRD && (
+                    <td
+                      className={`py-2.5 px-2 text-center tabular-nums text-xs font-semibold ${
+                        rd == null
+                          ? 'text-gray-400'
+                          : rd > 0
+                          ? 'text-accent'
+                          : rd < 0
+                          ? 'text-red-400'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {rd == null ? '—' : rd > 0 ? `+${rd}` : rd}
+                    </td>
+                  )}
                   <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500 hidden sm:table-cell">
                     {row.last10}
                   </td>
@@ -172,6 +218,11 @@ function DivisionTable({
                       {row.streak}
                     </span>
                   </td>
+                  {showPythag && (
+                    <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500 hidden sm:table-cell">
+                      {pythagStr}
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -343,7 +394,7 @@ function WBCPoolsView() {
   return (
     <div className="pt-3 pb-4">
       {data.pools.map((pool) => (
-        <DivisionTable key={pool.name} division={pool} playoffSpots={2} />
+        <DivisionTable key={pool.name} division={pool} playoffSpots={2} showRD={true} />
       ))}
     </div>
   );
@@ -518,7 +569,7 @@ export default function StandingsView() {
               </div>
             )}
             {data?.divisions.map((div) => (
-              <DivisionTable key={div.name} division={div} />
+              <DivisionTable key={div.name} division={div} showRD={true} showPythag={true} />
             ))}
           </>
         )}

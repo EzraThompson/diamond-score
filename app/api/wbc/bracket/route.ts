@@ -87,16 +87,19 @@ function getRound(event: ESPNEvent): string | null {
   const comp = event.competitions[0];
   if (!comp) return null;
 
-  // Check ESPN notes for round label
-  const headline = comp.notes?.[0]?.headline?.toLowerCase() ?? '';
-  if (headline.includes('championship') || headline.includes('final') || headline.includes('world baseball classic')) {
-    return 'Championship';
-  }
-  if (headline.includes('semifinal')) return 'Semifinal';
-  if (headline.includes('quarterfinal')) return 'Quarterfinal';
+  // Check competition type abbreviation first (most reliable — F=Final, SF=Semifinal, QF=Quarterfinal)
+  const typeAbbr = comp.type?.abbreviation?.toLowerCase() ?? '';
+  if (typeAbbr === 'f' || typeAbbr === 'ch' || typeAbbr === 'final') return 'Championship';
+  if (typeAbbr === 'sf') return 'Semifinal';
+  if (typeAbbr === 'qf') return 'Quarterfinal';
 
-  // Check season type: 3 = post-season
-  if (event.season?.type === 3) return 'Quarterfinal'; // fallback label
+  // Check ESPN notes for specific round keywords
+  // NOTE: do NOT match 'world baseball classic' (present on ALL WBC games)
+  // NOTE: do NOT match 'final' alone (could appear in pool play notes)
+  const headline = comp.notes?.[0]?.headline?.toLowerCase() ?? '';
+  if (headline.includes('championship')) return 'Championship';
+  if (headline.includes('semifinal') || headline.includes('semi final')) return 'Semifinal';
+  if (headline.includes('quarterfinal') || headline.includes('quarter final')) return 'Quarterfinal';
 
   return null; // pool play — not bracket
 }
