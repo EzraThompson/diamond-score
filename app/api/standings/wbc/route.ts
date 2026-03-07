@@ -61,6 +61,10 @@ function parseEntry(entry: ESPNEntry): Standing {
   // (caller will subtract the leader's GB from all rows to make the leader "0")
   const gb = stat(entry, 'gamesBehind');
 
+  // Run totals — ESPN uses 'runsScored' and 'runsAgainst' for WBC
+  const rs = Math.round(stat(entry, 'runsScored'));
+  const ra = Math.round(stat(entry, 'runsAgainst'));
+
   const abbreviation = ESPN_ABBR_MAP[entry.team.abbreviation] ?? entry.team.abbreviation;
   return {
     team: {
@@ -77,6 +81,8 @@ function parseEntry(entry: ESPNEntry): Standing {
     gamesBack: gb,
     streak: '',
     last10: '',
+    runsScored: rs > 0 ? rs : undefined,
+    runsAllowed: ra > 0 ? ra : undefined,
   };
 }
 

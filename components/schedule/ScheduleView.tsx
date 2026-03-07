@@ -7,6 +7,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import MonthCalendar from './MonthCalendar';
 import LeagueSection from '@/components/LeagueSection';
+import Header from '@/components/Header';
 
 const LEAGUE_CHIPS: { id: number; label: string }[] = [
   { id: 0,  label: 'All' },
@@ -91,16 +92,7 @@ export default function ScheduleView() {
 
   return (
     <div className="flex flex-col min-h-0 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
-        <h1 className="text-base font-bold text-gray-900">Schedule</h1>
-        <button
-          onClick={handleTodayClick}
-          className="text-xs font-semibold text-accent hover:opacity-75 transition-opacity"
-        >
-          Today
-        </button>
-      </div>
+      <Header date={selectedDate} onDateChange={() => handleTodayClick()} />
 
       {/* Calendar */}
       <div className="flex-shrink-0">

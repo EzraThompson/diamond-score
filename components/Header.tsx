@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { isToday } from 'date-fns';
 
 interface HeaderProps {
@@ -11,7 +12,7 @@ export default function Header({ date, onDateChange }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-surface-50/95 backdrop-blur-sm border-b border-surface-200">
       <div className="flex items-center justify-between px-4 h-12 max-w-lg mx-auto">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <svg width="28" height="28" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '8px', display: 'block', flexShrink: 0 }}>
             <rect width="52" height="52" fill="#1a2c18"/>
             <line x1="14" y1="0" x2="14" y2="52" stroke="rgba(210,240,200,0.3)" strokeWidth="1"/>
@@ -26,7 +27,7 @@ export default function Header({ date, onDateChange }: HeaderProps) {
             <circle cx="26" cy="26" r="1.8" fill="rgba(255,255,255,0.7)"/>
           </svg>
           <h1 className="text-base font-extrabold tracking-tight text-gray-900">Play-O-Graph</h1>
-        </div>
+        </Link>
         {date && onDateChange && (
           <button
             onClick={() => onDateChange(new Date())}
