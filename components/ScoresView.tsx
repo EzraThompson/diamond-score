@@ -36,7 +36,7 @@ export default function ScoresView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasShownConnectionError = useRef(false);
 
-  const { favoriteTeams, isLeagueFav } = useFavorites();
+  const { favoriteTeams } = useFavorites();
   const { settings } = useSettings();
   const { toast } = useToast();
 
