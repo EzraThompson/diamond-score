@@ -41,7 +41,7 @@ export default function Onboarding() {
             <circle cx="26" cy="26" r="1.8" fill="rgba(255,255,255,0.7)"/>
           </svg>
           <h2 className="text-base font-extrabold text-gray-900">
-            Welcome to Play-o-Graph
+            Welcome to Play-O-Graph
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Follow teams to see their games at the top of your feed.

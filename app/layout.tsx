@@ -37,13 +37,13 @@ const SPLASH_SIZES: [number, number, number][] = [
 ];
 
 export const metadata: Metadata = {
-  title: 'Play-o-Graph',
+  title: 'Play-O-Graph',
   description: 'Live baseball scores from MLB, NPB, and KBO',
   manifest: '/manifest.json',
   // Apple-specific PWA tags
   appleWebApp: {
     capable: true,
-    title: 'Play-o-Graph',
+    title: 'Play-O-Graph',
     statusBarStyle: 'black-translucent',
     startupImage: SPLASH_SIZES.map(([w, h, dpr]) => ({
       url: `/api/splash/${w * dpr}/${h * dpr}`,
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   // Open Graph
   openGraph: {
-    title: 'Play-o-Graph',
+    title: 'Play-O-Graph',
     description: 'Live baseball scores from MLB, NPB, and KBO',
     type: 'website',
   },

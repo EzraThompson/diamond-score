@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import ScoresView from '@/components/ScoresView';
 
 export const metadata: Metadata = {
-  title: 'Live Baseball Scores | Play-o-Graph',
+  title: 'Live Baseball Scores | Play-O-Graph',
   description: 'Live MLB, NPB, KBO, MiLB scores. Updated in real time.',
 };
 

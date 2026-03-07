@@ -655,7 +655,7 @@ function PrevNextNav({ detail }: { detail: GameDetail }) {
 
 // ── Main view ──────────────────────────────────────────────────────────
 
-export default function GameDetailView({ id }: { id: number }) {
+export default function GameDetailView({ id, leagueId }: { id: number; leagueId?: number }) {
   const router = useRouter();
   const [detail, setDetail] = useState<GameDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -666,7 +666,8 @@ export default function GameDetailView({ id }: { id: number }) {
     if (showLoading) setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/game/${id}`, { cache: 'no-store' });
+      const url = leagueId ? `/api/game/${id}?league=${leagueId}` : `/api/game/${id}`;
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error(String(res.status));
       const data: GameDetail = await res.json();
       setDetail(data);
@@ -675,7 +676,7 @@ export default function GameDetailView({ id }: { id: number }) {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, leagueId]);
 
   useEffect(() => { fetchDetail(true); }, [fetchDetail]);
 

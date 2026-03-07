@@ -13,6 +13,7 @@ import { logger } from '../logger';
 import { withRetry } from '../retry';
 import type {
   Game,
+  GameDetail,
   GameStatus,
   InningHalf,
   League,
@@ -276,4 +277,146 @@ export async function getWBCGames(date: string): Promise<Game[]> {
   gameCache.set(cacheKey, games, hasLive ? 30 : 120);
 
   return games;
+}
+
+// ── ESPN Summary API types ────────────────────────────────────────────
+
+interface ESPNSummaryCompetitorTeam {
+  id: string;
+  abbreviation: string;
+  displayName: string;
+  color?: string;
+  logos?: { href: string }[];
+}
+
+interface ESPNSummaryCompetitor {
+  homeAway: 'home' | 'away';
+  team: ESPNSummaryCompetitorTeam;
+  score?: string;
+  hits?: number;
+  errors?: number;
+}
+
+interface ESPNSummaryCompetition {
+  date: string;
+  status: ESPNStatus;
+  competitors: ESPNSummaryCompetitor[];
+  situation?: ESPNSituation;
+}
+
+interface ESPNSummary {
+  header?: {
+    competitions?: ESPNSummaryCompetition[];
+  };
+  gameInfo?: {
+    venue?: { fullName?: string };
+  };
+}
+
+function parseSummaryTeam(c: ESPNSummaryCompetitor): Team {
+  const abbreviation = ESPN_ABBR_MAP[c.team.abbreviation] ?? c.team.abbreviation;
+  return {
+    id: parseInt(c.team.id),
+    name: c.team.displayName,
+    abbreviation,
+    logoUrl: c.team.logos?.[0]?.href,
+    primaryColor: c.team.color ? `#${c.team.color}` : undefined,
+  };
+}
+
+// ── getWBCGameDetail ─────────────────────────────────────────────────
+
+/**
+ * Fetch full detail for a single WBC game by its ESPN event ID.
+ * Uses the ESPN summary endpoint, supplemented by scoreboard data for
+ * linescores and situation (runners/count) when available.
+ */
+export async function getWBCGameDetail(id: number): Promise<GameDetail> {
+  const cacheKey = `wbc:detail:${id}`;
+  const cached = gameCache.get<GameDetail>(cacheKey);
+  if (cached) return cached;
+
+  const summaryUrl = `${ESPN_BASE}/summary?event=${id}`;
+  const res = await fetch(summaryUrl, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`ESPN WBC summary API ${res.status}: event=${id}`);
+
+  const data = (await res.json()) as ESPNSummary;
+  const headerComp = data.header?.competitions?.[0];
+  if (!headerComp) throw new Error('ESPN WBC summary missing competition data');
+
+  const competitors = headerComp.competitors;
+  const home = competitors.find((c) => c.homeAway === 'home');
+  const away = competitors.find((c) => c.homeAway === 'away');
+  if (!home || !away) throw new Error('ESPN WBC summary missing competitor data');
+
+  const status = mapStatus(headerComp.status.type.name, headerComp.status.type.state);
+  const isLive = status === 'live';
+
+  const homeTeam = parseSummaryTeam(home);
+  const awayTeam = parseSummaryTeam(away);
+
+  // Supplement with scoreboard data (linescore + live situation)
+  const gameDate = headerComp.date.slice(0, 10);
+  let linescore: LinescoreInning[] | undefined;
+  let homeHits: number | undefined = home.hits;
+  let awayHits: number | undefined = away.hits;
+  let homeErrors: number | undefined = home.errors;
+  let awayErrors: number | undefined = away.errors;
+  let scoreboard: Game | undefined;
+  try {
+    const games = await getWBCGames(gameDate);
+    scoreboard = games.find((g) => g.id === id);
+    if (scoreboard) {
+      linescore  = scoreboard.linescore;
+      homeHits   = scoreboard.homeHits   ?? homeHits;
+      awayHits   = scoreboard.awayHits   ?? awayHits;
+      homeErrors = scoreboard.homeErrors ?? homeErrors;
+      awayErrors = scoreboard.awayErrors ?? awayErrors;
+    }
+  } catch {
+    // Non-fatal — detail page still renders without linescore
+  }
+
+  const detail: GameDetail = {
+    id,
+    league: WBC_LEAGUE,
+    status,
+    scheduledTime: headerComp.date,
+    homeTeam,
+    awayTeam,
+    homeScore: parseInt(home.score ?? '0') || 0,
+    awayScore: parseInt(away.score ?? '0') || 0,
+    currentInning: isLive ? headerComp.status.period : undefined,
+    inningHalf: isLive ? mapInningHalf(headerComp.status.type.detail) : undefined,
+    linescore,
+    homeHits,
+    awayHits,
+    homeErrors,
+    awayErrors,
+    venue: data.gameInfo?.venue?.fullName,
+    homeColor: homeTeam.primaryColor,
+    awayColor: awayTeam.primaryColor,
+  };
+
+  if (isLive) {
+    // Priority 1: summary situation block
+    if (headerComp.situation) {
+      const sit = headerComp.situation;
+      detail.runnersOn = parseRunners(sit);
+      if (sit.outs !== undefined || sit.balls !== undefined || sit.strikes !== undefined) {
+        const outs = sit.outs ?? 0;
+        detail.outs = outs;
+        detail.count = { balls: sit.balls ?? 0, strikes: sit.strikes ?? 0, outs };
+      }
+    }
+    // Priority 2: scoreboard situation (more reliably present)
+    if (scoreboard) {
+      if (!detail.count     && scoreboard.count)    detail.count     = scoreboard.count;
+      if (!detail.runnersOn && scoreboard.runnersOn) detail.runnersOn = scoreboard.runnersOn;
+      if (detail.outs === undefined && scoreboard.outs !== undefined) detail.outs = scoreboard.outs;
+    }
+  }
+
+  gameCache.set(cacheKey, detail, isLive ? 30 : 300);
+  return detail;
 }

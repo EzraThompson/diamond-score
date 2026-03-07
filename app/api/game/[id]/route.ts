@@ -3,6 +3,7 @@ import { getMLBGameDetail } from '@/lib/data-sources/mlb';
 import { getNCAAGameDetail } from '@/lib/data-sources/ncaa';
 import { getNPBGameDetail, NPB_ID_MIN, NPB_ID_MAX } from '@/lib/data-sources/npb';
 import { getKBOGameDetail, KBO_ID_MIN, KBO_ID_MAX } from '@/lib/data-sources/kbo';
+import { getWBCGameDetail } from '@/lib/data-sources/wbc';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,11 @@ export const dynamic = 'force-dynamic';
 // NPB IDs live in [2_000_000, 3_000_000) — checked first to avoid ambiguity.
 const ESPN_ID_THRESHOLD = 400_000_000;
 
+// WBC league ID as defined in buildScores / WBC_LEAGUE
+const WBC_LEAGUE_ID = 20;
+
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const gamePk = parseInt(params.id, 10);
@@ -20,9 +24,17 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid game ID' }, { status: 400 });
   }
 
+  // A ?league= query param lets the client tell us which source to use.
+  // This is required to distinguish WBC from NCAA — both use ESPN IDs in the
+  // 400M+ range and cannot be differentiated by ID alone.
+  const url = new URL(req.url);
+  const leagueId = parseInt(url.searchParams.get('league') ?? '', 10) || null;
+
   try {
     let detail;
-    if (gamePk >= NPB_ID_MIN && gamePk < NPB_ID_MAX) {
+    if (leagueId === WBC_LEAGUE_ID) {
+      detail = await getWBCGameDetail(gamePk);
+    } else if (gamePk >= NPB_ID_MIN && gamePk < NPB_ID_MAX) {
       detail = await getNPBGameDetail(gamePk);
     } else if (gamePk >= KBO_ID_MIN && gamePk < KBO_ID_MAX) {
       detail = await getKBOGameDetail(gamePk);

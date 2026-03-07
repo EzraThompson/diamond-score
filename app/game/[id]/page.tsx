@@ -8,9 +8,10 @@ const GameDetailView = dynamic(() => import('@/components/game/GameDetailView'),
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://diamondscore.app';
 
-async function fetchGameDetail(id: string): Promise<GameDetail | null> {
+async function fetchGameDetail(id: string, league?: string): Promise<GameDetail | null> {
   try {
-    const res = await fetch(`${SITE_URL}/api/game/${id}`, {
+    const qs = league ? `?league=${league}` : '';
+    const res = await fetch(`${SITE_URL}/api/game/${id}${qs}`, {
       next: { revalidate: 30 },
     });
     if (!res.ok) return null;
@@ -22,13 +23,15 @@ async function fetchGameDetail(id: string): Promise<GameDetail | null> {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { league?: string };
 }): Promise<Metadata> {
-  const game = await fetchGameDetail(params.id);
+  const game = await fetchGameDetail(params.id, searchParams.league);
 
   if (!game) {
-    return { title: 'Game | Play-o-Graph' };
+    return { title: 'Game | Play-O-Graph' };
   }
 
   const away = game.awayTeam.abbreviation;
@@ -37,9 +40,9 @@ export async function generateMetadata({
 
   let title: string;
   if (game.status === 'final' || game.status === 'live') {
-    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'} | Play-o-Graph`;
+    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'} | Play-O-Graph`;
   } else {
-    title = `${away} @ ${home} | Play-o-Graph`;
+    title = `${away} @ ${home} | Play-O-Graph`;
   }
 
   return {
@@ -58,10 +61,13 @@ export async function generateMetadata({
 
 export default async function GamePage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { league?: string };
 }) {
-  const game = await fetchGameDetail(params.id);
+  const leagueId = searchParams.league ? parseInt(searchParams.league, 10) : undefined;
+  const game = await fetchGameDetail(params.id, searchParams.league);
 
   const jsonLd = game
     ? {
@@ -89,7 +95,7 @@ export default async function GamePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <GameDetailView id={parseInt(params.id, 10)} />
+      <GameDetailView id={parseInt(params.id, 10)} leagueId={leagueId} />
     </>
   );
 }

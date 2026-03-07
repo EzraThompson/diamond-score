@@ -135,7 +135,7 @@ export async function GET(
 
         {/* Wordmark */}
         <span style={{ color: '#4ADE80', fontSize: '22px', fontWeight: 700, letterSpacing: '0.05em' }}>
-          Play-o-Graph
+          Play-O-Graph
         </span>
       </div>
     ),
