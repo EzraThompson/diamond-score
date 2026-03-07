@@ -133,7 +133,7 @@ export default function ScoresView() {
   }, []);
 
   // SSE update: patch changed games across all slots by game ID
-  const handleUpdate = useCallback((changedGames: Game[], _hasLive: boolean) => {
+  const handleUpdate = useCallback((changedGames: Game[]) => {
     const byId = new Map(changedGames.map((g) => [g.id, g]));
     setSlots((prev) => {
       const next = { ...prev };
