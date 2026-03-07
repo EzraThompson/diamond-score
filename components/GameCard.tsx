@@ -117,7 +117,7 @@ function StatusDisplay({ game }: { game: Game }) {
   }
 
   const time = format(new Date(game.scheduledTime), 'h:mm a');
-  return <span className="text-xs font-medium text-scheduled">{time}</span>;
+  return <time dateTime={game.scheduledTime} className="text-xs font-medium text-scheduled">{time}</time>;
 }
 
 // ── Linescore ─────────────────────────────────────────────────────────

@@ -26,7 +26,7 @@ export default function Header({ date, onDateChange }: HeaderProps) {
             <rect x="2.7" y="23.2" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
             <circle cx="26" cy="26" r="1.8" fill="rgba(255,255,255,0.7)"/>
           </svg>
-          <h1 className="text-base font-extrabold tracking-tight text-gray-900">Play-O-Graph</h1>
+          <span className="text-base font-extrabold tracking-tight text-gray-900">Play-O-Graph</span>
         </Link>
         {date && onDateChange && (
           <button

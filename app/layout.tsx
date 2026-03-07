@@ -36,10 +36,17 @@ const SPLASH_SIZES: [number, number, number][] = [
   [414, 896, 3],   // iPhone XS Max / 11 Pro Max
 ];
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://play-o-graph.com';
+
 export const metadata: Metadata = {
-  title: 'Play-O-Graph',
-  description: 'Live baseball scores from MLB, NPB, and KBO',
+  title: {
+    default: 'Play-O-Graph — Live Baseball Scores | MLB, KBO, NPB & More',
+    template: '%s | Play-O-Graph',
+  },
+  description: 'Live baseball scores and standings from MLB, KBO, NPB, MiLB, NCAA, and international leagues. Real-time box scores, schedules, and results updated every 15 seconds.',
+  keywords: ['baseball scores', 'KBO scores', 'NPB scores', 'MLB scores', 'japan baseball scores', 'korea baseball scores', 'live baseball', 'international baseball', 'minor league baseball scores', 'college baseball scores'],
   manifest: '/manifest.json',
+  alternates: { canonical: SITE_URL },
   // Apple-specific PWA tags
   appleWebApp: {
     capable: true,
@@ -64,9 +71,16 @@ export const metadata: Metadata = {
   },
   // Open Graph
   openGraph: {
-    title: 'Play-O-Graph',
-    description: 'Live baseball scores from MLB, NPB, and KBO',
+    title: 'Play-O-Graph — Live Baseball Scores',
+    description: 'Live scores from MLB, KBO, NPB, MiLB, NCAA, and international baseball leagues.',
+    url: SITE_URL,
+    siteName: 'Play-O-Graph',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Play-O-Graph — Live Baseball Scores',
+    description: 'Live scores from MLB, KBO, NPB, MiLB, NCAA, and international baseball leagues.',
   },
 };
 
@@ -91,12 +105,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${jetbrains.variable}`}>
       <head>
-        {/* Prevent phone-number auto-detection on iOS */}
         <meta name="format-detection" content="telephone=no" />
-        {/* Ensure correct rendering in IE/Edge legacy */}
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <link rel="preconnect" href="https://midfield.mlbstatic.com" />
+        <link rel="dns-prefetch" href="https://midfield.mlbstatic.com" />
       </head>
       <body className="font-sans antialiased bg-surface text-gray-900">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Play-O-Graph',
+              url: SITE_URL,
+              description: 'Live baseball scores from MLB, KBO, NPB, MiLB, NCAA, and international leagues',
+            }),
+          }}
+        />
         <SettingsProvider>
           <FavoritesProvider>
             <ToastProvider>

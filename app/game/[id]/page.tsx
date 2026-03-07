@@ -6,7 +6,7 @@ const GameDetailView = dynamic(() => import('@/components/game/GameDetailView'),
   ssr: false,
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://diamondscore.app';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://play-o-graph.com';
 
 async function fetchGameDetail(id: string, league?: string): Promise<GameDetail | null> {
   try {
@@ -47,6 +47,7 @@ export async function generateMetadata({
 
   return {
     title,
+    alternates: { canonical: `${SITE_URL}/game/${params.id}` },
     openGraph: {
       title,
       images: [{ url: ogImageUrl, width: 1200, height: 630 }],
