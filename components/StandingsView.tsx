@@ -6,6 +6,7 @@ import TeamBadge from '@/components/TeamBadge';
 import { findTeam } from '@/lib/teamRegistry';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import Header from '@/components/Header';
+import WBCBracket from '@/components/WBCBracket';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -35,12 +36,12 @@ const MILB_LEVELS: MiLBLevel[] = [
 ];
 
 const LEAGUE_TABS: { id: LeagueTab; label: string }[] = [
+  { id: 'wbc',  label: 'WBC'  },
   { id: 'mlb',  label: 'MLB'  },
   { id: 'milb', label: 'MiLB' },
   { id: 'ncaa', label: 'NCAA' },
   { id: 'npb',  label: 'NPB'  },
   { id: 'kbo',  label: 'KBO'  },
-  { id: 'wbc',  label: 'WBC'  },
 ];
 
 // ── WBC types ───────────────────────────────────────────────────────────
@@ -310,7 +311,9 @@ function NCAATab({
 
 // ── WBC ────────────────────────────────────────────────────────────────
 
-function WBCTab() {
+type WBCSubTab = 'pools' | 'bracket';
+
+function WBCPoolsView() {
   const [data, setData] = useState<WBCStandingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -342,6 +345,34 @@ function WBCTab() {
       {data.pools.map((pool) => (
         <DivisionTable key={pool.name} division={pool} playoffSpots={2} />
       ))}
+    </div>
+  );
+}
+
+function WBCTab() {
+  const [subTab, setSubTab] = useState<WBCSubTab>('pools');
+
+  return (
+    <div>
+      {/* Sub-tabs: Pools | Bracket */}
+      <div className="flex gap-1 px-4 pt-3 pb-2">
+        {(['pools', 'bracket'] as WBCSubTab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setSubTab(t)}
+            className={`flex-none whitespace-nowrap text-xs font-semibold py-1 px-3 rounded-lg transition-colors capitalize ${
+              subTab === t
+                ? 'bg-accent text-white'
+                : 'bg-surface-100 text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t === 'pools' ? 'Pool Standings' : 'Bracket'}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'pools'   && <WBCPoolsView />}
+      {subTab === 'bracket' && <WBCBracket />}
     </div>
   );
 }
@@ -385,7 +416,7 @@ function ComingSoon({ league }: { league: string }) {
 export default function StandingsView() {
   const { favoriteTeams, toggleTeam } = useFavorites();
 
-  const [leagueTab, setLeagueTab]   = useState<LeagueTab>('mlb');
+  const [leagueTab, setLeagueTab]   = useState<LeagueTab>('wbc');
   const [milbLevel, setMilbLevel]   = useState<MiLBLevel>(MILB_LEVELS[0]);
   const [data, setData]             = useState<StandingsData | null>(null);
   const [loading, setLoading]       = useState(true);
@@ -429,7 +460,7 @@ export default function StandingsView() {
             <button
               key={tab.id}
               onClick={() => setLeagueTab(tab.id)}
-              className={`flex-shrink-0 flex-1 text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors ${
+              className={`flex-none whitespace-nowrap text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors ${
                 leagueTab === tab.id
                   ? 'bg-accent text-white'
                   : 'bg-surface-100 text-gray-500 hover:text-gray-700'

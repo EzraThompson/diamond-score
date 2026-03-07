@@ -54,8 +54,8 @@ export default function LeagueSection({
         onClick={() => setCollapsed((c) => !c)}
         className="flex items-center gap-2 px-4 py-2 w-full text-left"
       >
-        <div className="w-5 h-5 rounded bg-surface-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-[9px] font-bold text-gray-600 tracking-tight">
+        <div className="w-7 h-5 rounded bg-surface-200 flex items-center justify-center flex-shrink-0 px-0.5">
+          <span className="text-[8px] font-bold text-gray-600 tracking-tighter whitespace-nowrap">
             {badgeLabel}
           </span>
         </div>
