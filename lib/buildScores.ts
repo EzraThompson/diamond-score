@@ -10,6 +10,8 @@ import type { Game } from './types';
 export interface LeagueGroup {
   id: number;
   name: string;
+  /** Short abbreviation for the badge tile (e.g. "WBC"). Falls back to first 3 letters of name. */
+  abbr?: string;
   country: string;
   logoUrl?: string;
   games: Game[];
@@ -116,9 +118,9 @@ export async function buildScores(date: string): Promise<ScoresResult> {
   // Shown at the top when the tournament is active (games exist on this date).
   if (wbcRes.ok && wbcRes.value.length > 0) {
     leagues.push({
-      id: 20, name: 'World Baseball Classic', country: 'International',
+      id: 20, name: 'World Baseball Classic', abbr: 'WBC', country: 'International',
       games: wbcRes.value,
-      defaultCollapsed: false, showTop25Filter: false,
+      defaultCollapsed: true, showTop25Filter: false,
     });
   }
 
@@ -135,7 +137,7 @@ export async function buildScores(date: string): Promise<ScoresResult> {
     leagues.push({
       id: 1, name: 'MLB', country: 'USA', logoUrl: '/logos/mlb.svg',
       games: [],
-      defaultCollapsed: false, showTop25Filter: false,
+      defaultCollapsed: true, showTop25Filter: false,
       error: 'Data temporarily unavailable',
     });
   }
@@ -158,14 +160,14 @@ export async function buildScores(date: string): Promise<ScoresResult> {
       leagues.push({
         id: 2, name: 'NPB', country: 'Japan', logoUrl: '/logos/npb.svg',
         games: npbRes.value,
-        defaultCollapsed: false, showTop25Filter: false,
+        defaultCollapsed: true, showTop25Filter: false,
       });
     }
   } else {
     leagues.push({
       id: 2, name: 'NPB', country: 'Japan', logoUrl: '/logos/npb.svg',
       games: [],
-      defaultCollapsed: false, showTop25Filter: false,
+      defaultCollapsed: true, showTop25Filter: false,
       error: 'Data temporarily unavailable',
     });
   }
@@ -176,14 +178,14 @@ export async function buildScores(date: string): Promise<ScoresResult> {
       leagues.push({
         id: 3, name: 'KBO', country: 'South Korea', logoUrl: '/logos/kbo.svg',
         games: kboRes.value,
-        defaultCollapsed: false, showTop25Filter: false,
+        defaultCollapsed: true, showTop25Filter: false,
       });
     }
   } else {
     leagues.push({
       id: 3, name: 'KBO', country: 'South Korea', logoUrl: '/logos/kbo.svg',
       games: [],
-      defaultCollapsed: false, showTop25Filter: false,
+      defaultCollapsed: true, showTop25Filter: false,
       error: 'Data temporarily unavailable',
     });
   }

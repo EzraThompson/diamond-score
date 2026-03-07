@@ -238,6 +238,7 @@ export default function ScoresView() {
             <ErrorBoundary key={league.id} label={league.name}>
               <LeagueSection
                 name={league.name}
+                abbr={league.abbr}
                 logoUrl={league.logoUrl}
                 games={league.games}
                 defaultCollapsed={favoriteTeams.size === 0 ? league.defaultCollapsed : !hasFavTeam}
