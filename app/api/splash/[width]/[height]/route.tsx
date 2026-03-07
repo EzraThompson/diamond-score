@@ -101,7 +101,7 @@ export async function GET(
               fontFamily: 'system-ui, sans-serif',
             }}
           >
-            Play-o-Graph
+            Play-O-Graph
           </div>
           <div
             style={{

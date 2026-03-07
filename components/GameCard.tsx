@@ -203,7 +203,7 @@ export default function GameCard({ game }: { game: Game }) {
       return;
     }
 
-    router.push(`/game/${game.id}`);
+    router.push(`/game/${game.id}?league=${game.league.id}`);
   }
 
   return (
