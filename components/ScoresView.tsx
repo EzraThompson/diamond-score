@@ -215,7 +215,7 @@ export default function ScoresView() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="flex flex-col min-h-0">
+    <div className="flex flex-col min-h-0">
       <Header date={date} onDateChange={setDate} />
       <DateStrip selected={date} onSelect={setDate} />
 
@@ -227,7 +227,7 @@ export default function ScoresView() {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
+      <div ref={containerRef} className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable', overscrollBehaviorY: 'contain' }}>
         {/* No games today (all loaded, nothing scheduled) */}
         {allLoaded && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
