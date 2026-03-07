@@ -115,7 +115,7 @@ export async function GET() {
 
   try {
     const res = await fetch(
-      'https://site.api.espn.com/apis/v2/sports/baseball/wbc/standings',
+      'https://site.api.espn.com/apis/v2/sports/baseball/world-baseball-classic/standings',
       { cache: 'no-store' },
     );
 
