@@ -5,6 +5,7 @@ import type { Standing, NCAARankingsData, RankedCollegeTeam } from '@/lib/types'
 import TeamBadge from '@/components/TeamBadge';
 import { findTeam } from '@/lib/teamRegistry';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import Header from '@/components/Header';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -419,17 +420,11 @@ export default function StandingsView() {
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* ── Header ── */}
-      <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-surface-200">
-        <div className="flex items-center justify-between px-4 h-12">
-          <h1 className="text-base font-bold text-gray-900">Standings</h1>
-          {data && (
-            <span className="text-xs text-gray-400">{data.season} Season</span>
-          )}
-        </div>
+      <Header />
 
-        {/* League tabs */}
-        <div className="flex gap-1 px-4 pb-2 overflow-x-auto no-scrollbar">
+      {/* ── League tabs ── */}
+      <div className="sticky top-12 z-30 bg-surface-50/95 backdrop-blur-sm border-b border-surface-200">
+        <div className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar">
           {LEAGUE_TABS.map((tab) => (
             <button
               key={tab.id}

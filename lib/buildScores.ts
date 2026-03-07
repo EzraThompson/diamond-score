@@ -112,6 +112,16 @@ export async function buildScores(date: string): Promise<ScoresResult> {
 
   const leagues: LeagueGroup[] = [];
 
+  // ── WBC ──────────────────────────────────────────────────────────────
+  // Shown at the top when the tournament is active (games exist on this date).
+  if (wbcRes.ok && wbcRes.value.length > 0) {
+    leagues.push({
+      id: 20, name: 'World Baseball Classic', country: 'International',
+      games: wbcRes.value,
+      defaultCollapsed: false, showTop25Filter: false,
+    });
+  }
+
   // ── MLB ─────────────────────────────────────────────────────────────
   if (mlbRes.ok) {
     if (mlbRes.value.length > 0) {
@@ -193,17 +203,6 @@ export async function buildScores(date: string): Promise<ScoresResult> {
       games: [],
       defaultCollapsed: true, showTop25Filter: true,
       error: 'Data temporarily unavailable',
-    });
-  }
-
-  // ── WBC ──────────────────────────────────────────────────────────────
-  // WBC is a periodic tournament — only show the section when games exist.
-  // Failures are silent (no error card) since it's not always active.
-  if (wbcRes.ok && wbcRes.value.length > 0) {
-    leagues.push({
-      id: 20, name: 'World Baseball Classic', country: 'International',
-      games: wbcRes.value,
-      defaultCollapsed: false, showTop25Filter: false,
     });
   }
 

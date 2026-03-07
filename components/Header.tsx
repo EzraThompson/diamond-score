@@ -3,8 +3,8 @@
 import { isToday } from 'date-fns';
 
 interface HeaderProps {
-  date: Date;
-  onDateChange: (date: Date) => void;
+  date?: Date;
+  onDateChange?: (date: Date) => void;
 }
 
 export default function Header({ date, onDateChange }: HeaderProps) {
@@ -25,18 +25,20 @@ export default function Header({ date, onDateChange }: HeaderProps) {
             <rect x="2.7" y="23.2" width="5.6" height="5.6" rx="1" fill="rgba(255,255,255,0.9)"/>
             <circle cx="26" cy="26" r="1.8" fill="rgba(255,255,255,0.7)"/>
           </svg>
-          <h1 className="text-base font-extrabold tracking-tight text-gray-900">DiamondScore</h1>
+          <h1 className="text-base font-extrabold tracking-tight text-gray-900">Play-o-Graph</h1>
         </div>
-        <button
-          onClick={() => onDateChange(new Date())}
-          className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-colors ${
-            isToday(date)
-              ? 'bg-accent text-white'
-              : 'bg-surface-100 text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Today
-        </button>
+        {date && onDateChange && (
+          <button
+            onClick={() => onDateChange(new Date())}
+            className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-colors ${
+              isToday(date)
+                ? 'bg-accent text-white'
+                : 'bg-surface-100 text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Today
+          </button>
+        )}
       </div>
     </header>
   );

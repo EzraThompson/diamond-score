@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import StandingsView from '@/components/StandingsView';
 
 export const metadata: Metadata = {
-  title: 'Baseball Standings | DiamondScore',
+  title: 'Baseball Standings | Play-o-Graph',
   description: 'MLB, MiLB, NPB, KBO standings.',
 };
 
