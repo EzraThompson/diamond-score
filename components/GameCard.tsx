@@ -209,7 +209,7 @@ export default function GameCard({ game }: { game: Game }) {
   return (
     <div
       onClick={handleClick}
-      className={`bg-surface-50 rounded-xl px-4 py-3 border transition-colors cursor-pointer ${
+      className={`bg-surface-50 rounded-xl px-4 pt-3 pb-2 border transition-colors cursor-pointer ${
         isLive
           ? 'border-live/30 shadow-sm shadow-live/10'
           : 'border-surface-200 hover:border-surface-300 hover:bg-surface-100'
@@ -232,9 +232,9 @@ export default function GameCard({ game }: { game: Game }) {
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           {/* Away */}
-          <div className="flex items-center gap-2.5 mb-1.5">
+          <div className="flex items-center gap-2 mb-1.5">
             <TeamBadge abbreviation={game.awayTeam.abbreviation} primaryColor={game.awayTeam.primaryColor} logoUrl={game.awayTeam.logoUrl} showLogo={game.league.id === 20} />
-            <span className={`text-sm font-bold truncate flex-1 ${
+            <span className={`text-sm font-bold truncate flex-1 min-w-0 ${
               awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-400' : 'text-gray-500'
             }`}>
               {game.awayTeam.rank && (
@@ -260,7 +260,7 @@ export default function GameCard({ game }: { game: Game }) {
             </div>
             <span
               data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
+              className={`ml-1 w-8 text-right text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
                 awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
               } ${awayFlashing ? 'animate-score-flash text-accent' : ''} ${
                 spoilerActive ? 'cursor-pointer select-none' : ''
@@ -274,9 +274,9 @@ export default function GameCard({ game }: { game: Game }) {
             </span>
           </div>
           {/* Home */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <TeamBadge abbreviation={game.homeTeam.abbreviation} primaryColor={game.homeTeam.primaryColor} logoUrl={game.homeTeam.logoUrl} showLogo={game.league.id === 20} />
-            <span className={`text-sm font-bold truncate flex-1 ${
+            <span className={`text-sm font-bold truncate flex-1 min-w-0 ${
               homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-400' : 'text-gray-500'
             }`}>
               {game.homeTeam.rank && (
@@ -302,7 +302,7 @@ export default function GameCard({ game }: { game: Game }) {
             </div>
             <span
               data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
+              className={`ml-1 w-8 text-right text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
                 homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
               } ${homeFlashing ? 'animate-score-flash text-accent' : ''} ${
                 spoilerActive ? 'cursor-pointer select-none' : ''
@@ -319,17 +319,17 @@ export default function GameCard({ game }: { game: Game }) {
 
         {/* Live: diamond — only shown for leagues that provide count/runner data */}
         {isLive && game.count && game.runnersOn && (
-          <div className="flex flex-col items-center gap-1 flex-shrink-0 pl-2 border-l border-surface-200">
-            <Diamond runners={game.runnersOn} size={32} />
+          <div className="flex flex-col items-center gap-0.5 flex-shrink-0 w-[68px] pl-1.5 border-l border-surface-200">
+            <Diamond runners={game.runnersOn} size={28} />
             {(game.currentBatter || game.currentPitcher) && (
-              <div className="flex flex-col items-center text-[9px] text-gray-400 leading-tight">
+              <div className="flex flex-col items-center text-[8px] text-gray-400 leading-tight w-full">
                 {game.currentBatter && (
-                  <span className="truncate max-w-[60px]">
+                  <span className="truncate w-full text-center">
                     AB: {game.currentBatter.name.split(' ').pop()}
                   </span>
                 )}
                 {game.currentPitcher && (
-                  <span className="truncate max-w-[60px]">
+                  <span className="truncate w-full text-center">
                     P: {game.currentPitcher.name.split(' ').pop()}
                   </span>
                 )}
@@ -359,7 +359,7 @@ export default function GameCard({ game }: { game: Game }) {
 
       {/* Expand hint */}
       {(game.status === 'live' || game.status === 'final') && game.linescore?.length && !spoilerActive && (
-        <div className="flex justify-center mt-1" data-expand="true">
+        <div className="flex justify-center" data-expand="true">
           <svg
             className={`w-3.5 h-3.5 text-gray-300 transition-transform ${expanded ? 'rotate-180' : ''}`}
             viewBox="0 0 24 24"
