@@ -604,13 +604,15 @@ async function getMLBTeamScheduleWindow(
 }
 
 /**
- * Fetch full game detail for the game detail page.
- * Returns box score, play-by-play, and current live situation.
- * Cached 30s for live games, 5min for finished/scheduled.
+ * Shared helper: fetch the MLB Stats API live feed and build a GameDetail.
+ * Reused by both MLB and WBC game detail functions.
+ * The caller supplies the league and color map so the output is source-appropriate.
  */
-export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
-  const cacheKey = `mlb:detail:${gamePk}`;
-
+export async function fetchGameDetailFromLiveFeed(
+  gamePk: number,
+  league: League,
+  colorMap: Record<number, string>,
+): Promise<GameDetail> {
   const feed = await mlbFetch<MLBFullLiveFeed>(
     `${MLB_API_LIVE}/game/${gamePk}/feed/live`
   );
@@ -633,7 +635,7 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
 
   const detail: GameDetail = {
     id: gamePk,
-    league: MLB_LEAGUE,
+    league,
     status,
     scheduledTime: feed.gameData.datetime?.dateTime ?? feed.gameData.datetime?.originalDate ?? '',
     homeTeam,
@@ -649,8 +651,8 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     homeErrors: ls.teams?.home.errors,
     awayErrors: ls.teams?.away.errors,
     venue: gameData.venue?.name,
-    homeColor: TEAM_COLORS[gameData.teams.home.id],
-    awayColor: TEAM_COLORS[gameData.teams.away.id],
+    homeColor: colorMap[gameData.teams.home.id],
+    awayColor: colorMap[gameData.teams.away.id],
   };
 
   // Use linescore.offense for runners — stays accurate during defensive subs/pitching changes
@@ -680,14 +682,25 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
   };
   detail.plays = parsePlays(liveData.plays.allPlays);
 
+  return detail;
+}
+
+/**
+ * Fetch full game detail for the game detail page.
+ * Returns box score, play-by-play, and current live situation.
+ * Cached 30s for live games, 5min for finished/scheduled.
+ */
+export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
+  const cacheKey = `mlb:detail:${gamePk}`;
+
+  const detail = await fetchGameDetailFromLiveFeed(gamePk, MLB_LEAGUE, TEAM_COLORS);
+
   // Fetch prev/next games for both teams (MLB-only, parallel)
-  const gameDate = feed.gameData.datetime?.originalDate
-    ?? feed.gameData.datetime?.dateTime?.slice(0, 10)
-    ?? new Date().toISOString().slice(0, 10);
+  const gameDate = detail.scheduledTime?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
 
   const [homeNav, awayNav] = await Promise.all([
-    getMLBTeamScheduleWindow(gameData.teams.home.id, gamePk, gameDate).catch(() => null),
-    getMLBTeamScheduleWindow(gameData.teams.away.id, gamePk, gameDate).catch(() => null),
+    getMLBTeamScheduleWindow(detail.homeTeam.id, gamePk, gameDate).catch(() => null),
+    getMLBTeamScheduleWindow(detail.awayTeam.id, gamePk, gameDate).catch(() => null),
   ]);
 
   if (homeNav) {
@@ -699,7 +712,7 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     if (awayNav.next) detail.nextGameAway = awayNav.next;
   }
 
-  const ttl = status === 'live' ? 30 : 300;
+  const ttl = detail.status === 'live' ? 30 : 300;
   gameCache.set(cacheKey, detail, ttl);
 
   return detail;

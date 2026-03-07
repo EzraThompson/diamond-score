@@ -1,3 +1,6 @@
+// NOTE: WBC standings still use ESPN API. The MLB Stats API does not provide
+// a WBC-specific standings endpoint. Pool standings would need to be computed
+// from game results, which requires knowing pool assignments.
 import { NextResponse } from 'next/server';
 import { standingsCache } from '@/lib/cache';
 import type { Standing } from '@/lib/types';

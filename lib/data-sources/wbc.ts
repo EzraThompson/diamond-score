@@ -1,37 +1,21 @@
 /**
  * WBC (World Baseball Classic) Data Source
  *
- * Uses ESPN's public scoreboard API for WBC games.
- * API: https://site.api.espn.com/apis/site/v2/sports/baseball/world-baseball-classic/scoreboard
+ * Uses the MLB Stats API (statsapi.mlb.com) with sportId=51 for WBC games.
+ * The response format is identical to MLB/MiLB, so we reuse fetchScheduleGames
+ * and fetchGameDetailFromLiveFeed from mlb.ts.
  *
- * WBC is a multi-round international tournament. Team abbreviations in ESPN's
- * API use IOC/WBSC country codes (USA, JPN, DOM, etc.).
+ * WBC is a multi-round international tournament. Team abbreviations use
+ * IOC/WBSC country codes (USA, JPN, DOM, etc.) with a few remaps needed.
  */
 
 import { gameCache } from '../cache';
-import { logger } from '../logger';
-import { withRetry } from '../retry';
-import type {
-  Game,
-  GameDetail,
-  GameStatus,
-  InningHalf,
-  League,
-  LinescoreInning,
-  RunnersOn,
-  Team,
-} from '../types';
+import { fetchScheduleGames, fetchGameDetailFromLiveFeed } from './mlb';
+import type { Game, GameDetail, GameStatus, League } from '../types';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const ESPN_BASE =
-  'https://site.api.espn.com/apis/site/v2/sports/baseball/world-baseball-classic';
-
-// ESPN uses different abbreviations for some WBC teams than our registry.
-// Map ESPN abbreviation → registry abbreviation.
-const ESPN_ABBR_MAP: Record<string, string> = {
-  COL: 'CLM', // Colombia — COL conflicts with MLB Colorado Rockies
-};
+const WBC_SPORT_ID = 51;
 
 export const WBC_LEAGUE: League = {
   id: 20,
@@ -39,146 +23,34 @@ export const WBC_LEAGUE: League = {
   country: 'International',
 };
 
-// ── ESPN API response types ──────────────────────────────────────────
+// MLB Stats API uses different abbreviations for some WBC teams than our registry.
+// Map MLB API abbreviation → registry abbreviation.
+export const WBC_ABBR_MAP: Record<string, string> = {
+  COL: 'CLM', // Colombia — COL conflicts with MLB Colorado Rockies
+  PUR: 'PRI', // Puerto Rico — MLB API uses PUR, registry uses PRI
+};
 
-interface ESPNScoreboard {
-  events?: ESPNEvent[];
-}
-
-interface ESPNEvent {
-  id: string;
-  competitions: ESPNCompetition[];
-  status: ESPNStatus;
-}
-
-interface ESPNCompetition {
-  startDate: string;
-  competitors: ESPNCompetitor[];
-  status: ESPNStatus;
-  situation?: ESPNSituation;
-  notes?: { type: string; headline?: string }[];
-}
-
-interface ESPNCompetitor {
-  homeAway: 'home' | 'away';
-  team: {
-    id: string;
-    abbreviation: string;
-    displayName: string;
-    color?: string;
-    logo?: string;
-  };
-  score?: string;
-  linescores?: { value: number; period: number }[];
-  records?: { name: string; summary: string }[];
-  hits?: number;
-  errors?: number;
-}
-
-interface ESPNStatus {
-  period: number;
-  type: {
-    name: string;
-    state: string;
-    detail: string;
-  };
-}
-
-interface ESPNSituation {
-  balls?: number;
-  strikes?: number;
-  outs?: number;
-  onFirst?: object | boolean | null;
-  onSecond?: object | boolean | null;
-  onThird?: object | boolean | null;
-}
-
-// ── Mapping helpers ──────────────────────────────────────────────────
-
-function mapStatus(typeName: string, state: string): GameStatus {
-  if (typeName === 'STATUS_POSTPONED' || typeName === 'STATUS_CANCELED' || typeName === 'STATUS_SUSPENDED') {
-    return 'postponed';
-  }
-  if (typeName === 'STATUS_DELAYED') return 'delayed';
-  if (state === 'in') return 'live';
-  if (state === 'post') return 'final';
-  return 'scheduled';
-}
-
-function mapInningHalf(detail: string): InningHalf | undefined {
-  const lower = detail.toLowerCase();
-  if (lower.startsWith('top')) return 'top';
-  if (lower.startsWith('bot')) return 'bottom';
-  if (lower.startsWith('mid')) return 'mid';
-  if (lower.startsWith('end')) return 'end';
-  return undefined;
-}
-
-function parseRecord(records?: { name: string; summary: string }[]): { wins?: number; losses?: number } {
-  if (!records?.length) return {};
-  const entry =
-    records.find((r) => r.name === 'overall') ??
-    records.find((r) => r.name === 'total') ??
-    records[0];
-  if (!entry?.summary) return {};
-  const match = entry.summary.match(/^(\d+)-(\d+)/);
-  if (!match) return {};
-  return { wins: parseInt(match[1], 10), losses: parseInt(match[2], 10) };
-}
-
-function parseTeam(c: ESPNCompetitor): Team {
-  const abbreviation = ESPN_ABBR_MAP[c.team.abbreviation] ?? c.team.abbreviation;
-  return {
-    id: parseInt(c.team.id),
-    name: c.team.displayName,
-    abbreviation,
-    logoUrl: c.team.logo,
-    primaryColor: c.team.color ? `#${c.team.color}` : undefined,
-    ...parseRecord(c.records),
-  };
-}
-
-function parseLinescore(
-  home: ESPNCompetitor,
-  away: ESPNCompetitor,
-): LinescoreInning[] | undefined {
-  const homeLs = home.linescores ?? [];
-  const awayLs = away.linescores ?? [];
-  if (!homeLs.length && !awayLs.length) return undefined;
-
-  const maxPeriod = Math.max(
-    ...homeLs.map((l) => l.period),
-    ...awayLs.map((l) => l.period),
-    0,
-  );
-  if (maxPeriod === 0) return undefined;
-
-  const homeByPeriod: Record<number, number> = Object.fromEntries(
-    homeLs.map((l) => [l.period, l.value]),
-  );
-  const awayByPeriod: Record<number, number> = Object.fromEntries(
-    awayLs.map((l) => [l.period, l.value]),
-  );
-
-  const innings: LinescoreInning[] = [];
-  for (let i = 1; i <= maxPeriod; i++) {
-    innings.push({
-      inning: i,
-      home: homeByPeriod[i] ?? null,
-      away: awayByPeriod[i] ?? null,
-    });
-  }
-  return innings;
-}
-
-function parseRunners(situation?: ESPNSituation): RunnersOn | undefined {
-  if (!situation) return undefined;
-  return {
-    first: !!situation.onFirst,
-    second: !!situation.onSecond,
-    third: !!situation.onThird,
-  };
-}
+// WBC team primary colors keyed by MLB Stats API team ID.
+// Values sourced from lib/teamRegistry.ts WBC entries.
+export const WBC_TEAM_COLORS: Record<number, string> = {
+  940: '#002868', // USA
+  843: '#BC002D', // JPN
+  867: '#006847', // MEX
+  798: '#003087', // CUB
+  944: '#CF142B', // VEN
+  897: '#ED0C2D', // PUR (Puerto Rico)
+  805: '#002D62', // DOM
+  792: '#FCD116', // COL (Colombia)
+  784: '#FF0000', // CAN
+  840: '#003087', // ISR
+  841: '#009246', // ITA
+  760: '#00843D', // AUS
+  791: '#003580', // TPE
+  800: '#11457E', // CZE
+  1171: '#CD2E3A', // KOR
+  878: '#FF4B00', // NED
+  890: '#DA121A', // PAN
+};
 
 const STATUS_ORDER: Record<GameStatus, number> = {
   live: 0,
@@ -188,235 +60,77 @@ const STATUS_ORDER: Record<GameStatus, number> = {
   delayed: 3,
 };
 
+// ── Helpers ─────────────────────────────────────────────────────────
+
+/** Apply WBC-specific post-processing to a game from fetchScheduleGames. */
+function enrichWBCGame(game: Game): void {
+  // Remap abbreviations
+  const homeAbbr = WBC_ABBR_MAP[game.homeTeam.abbreviation];
+  if (homeAbbr) game.homeTeam.abbreviation = homeAbbr;
+  const awayAbbr = WBC_ABBR_MAP[game.awayTeam.abbreviation];
+  if (awayAbbr) game.awayTeam.abbreviation = awayAbbr;
+
+  // Inject colors from WBC-specific map (overrides any default from mlb.ts TEAM_COLORS)
+  game.homeTeam.primaryColor = WBC_TEAM_COLORS[game.homeTeam.id] ?? game.homeTeam.primaryColor;
+  game.awayTeam.primaryColor = WBC_TEAM_COLORS[game.awayTeam.id] ?? game.awayTeam.primaryColor;
+
+  // Inject logo URLs from mlbstatic CDN
+  game.homeTeam.logoUrl = `https://www.mlbstatic.com/team-logos/${game.homeTeam.id}.svg`;
+  game.awayTeam.logoUrl = `https://www.mlbstatic.com/team-logos/${game.awayTeam.id}.svg`;
+}
+
+/** Apply WBC-specific post-processing to a GameDetail. */
+function enrichWBCDetail(detail: GameDetail): void {
+  const homeAbbr = WBC_ABBR_MAP[detail.homeTeam.abbreviation];
+  if (homeAbbr) detail.homeTeam.abbreviation = homeAbbr;
+  const awayAbbr = WBC_ABBR_MAP[detail.awayTeam.abbreviation];
+  if (awayAbbr) detail.awayTeam.abbreviation = awayAbbr;
+
+  detail.homeTeam.primaryColor = WBC_TEAM_COLORS[detail.homeTeam.id] ?? detail.homeTeam.primaryColor;
+  detail.awayTeam.primaryColor = WBC_TEAM_COLORS[detail.awayTeam.id] ?? detail.awayTeam.primaryColor;
+
+  detail.homeTeam.logoUrl = `https://www.mlbstatic.com/team-logos/${detail.homeTeam.id}.svg`;
+  detail.awayTeam.logoUrl = `https://www.mlbstatic.com/team-logos/${detail.awayTeam.id}.svg`;
+
+  detail.homeColor = detail.homeTeam.primaryColor;
+  detail.awayColor = detail.awayTeam.primaryColor;
+}
+
 // ── Public API ───────────────────────────────────────────────────────
 
 /**
  * Fetch WBC games for a given date (YYYY-MM-DD).
+ * Uses the MLB Stats API with sportId=51 — same format as MLB/MiLB.
  * Returns all games sorted live → final → scheduled.
- * Returns an empty array (not an error) when no WBC games are scheduled.
  */
 export async function getWBCGames(date: string): Promise<Game[]> {
-  const cacheKey = `wbc:${date}`;
-  const cached = gameCache.get<Game[]>(cacheKey);
-  if (cached) return cached;
+  const games = await fetchScheduleGames(date, WBC_SPORT_ID, WBC_LEAGUE);
 
-  const espnDate = date.replace(/-/g, '');
-  const scoreboardUrl = `${ESPN_BASE}/scoreboard?dates=${espnDate}&limit=100`;
-
-  const res = await withRetry(
-    async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
-      const done = logger.timed('wbc', scoreboardUrl);
-      try {
-        const r = await fetch(scoreboardUrl, { cache: 'no-store', signal: controller.signal });
-        done({ status: r.status, error: r.ok ? undefined : `HTTP ${r.status}` });
-        if (!r.ok) throw new Error(`ESPN WBC API ${r.status}`);
-        return r;
-      } finally {
-        clearTimeout(timeout);
-      }
-    },
-    { retries: 2, baseDelayMs: 500, source: 'wbc', label: 'scoreboard' },
-  );
-
-  const data = (await res.json()) as ESPNScoreboard;
-  const events = data.events ?? [];
-
-  const games: Game[] = [];
-
-  for (const event of events) {
-    const comp = event.competitions?.[0];
-    if (!comp) continue;
-
-    const home = comp.competitors.find((c) => c.homeAway === 'home');
-    const away = comp.competitors.find((c) => c.homeAway === 'away');
-    if (!home || !away) continue;
-
-    const status = mapStatus(event.status.type.name, event.status.type.state);
-    const isLive = status === 'live';
-
-    const game: Game = {
-      id: parseInt(event.id),
-      league: WBC_LEAGUE,
-      status,
-      scheduledTime: comp.startDate,
-      homeTeam: parseTeam(home),
-      awayTeam: parseTeam(away),
-      homeScore: parseInt(home.score ?? '0') || 0,
-      awayScore: parseInt(away.score ?? '0') || 0,
-      currentInning: isLive ? event.status.period : undefined,
-      inningHalf: isLive ? mapInningHalf(event.status.type.detail) : undefined,
-      linescore: parseLinescore(home, away),
-      homeHits: home.hits,
-      awayHits: away.hits,
-      homeErrors: home.errors,
-      awayErrors: away.errors,
-    };
-
-    if (isLive && comp.situation) {
-      const sit = comp.situation;
-      game.runnersOn = parseRunners(sit);
-      if (sit.outs !== undefined || sit.balls !== undefined || sit.strikes !== undefined) {
-        const outs = sit.outs ?? 0;
-        game.outs = outs;
-        game.count = {
-          balls: sit.balls ?? 0,
-          strikes: sit.strikes ?? 0,
-          outs,
-        };
-      }
-    }
-
-    games.push(game);
+  for (const game of games) {
+    enrichWBCGame(game);
   }
 
-  games.sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-
-  const hasLive = games.some((g) => g.status === 'live');
-  gameCache.set(cacheKey, games, hasLive ? 30 : 120);
+  games.sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9));
 
   return games;
 }
 
-// ── ESPN Summary API types ────────────────────────────────────────────
-
-interface ESPNSummaryCompetitorTeam {
-  id: string;
-  abbreviation: string;
-  displayName: string;
-  color?: string;
-  logos?: { href: string }[];
-}
-
-interface ESPNSummaryCompetitor {
-  homeAway: 'home' | 'away';
-  team: ESPNSummaryCompetitorTeam;
-  score?: string;
-  hits?: number;
-  errors?: number;
-}
-
-interface ESPNSummaryCompetition {
-  date: string;
-  status: ESPNStatus;
-  competitors: ESPNSummaryCompetitor[];
-  situation?: ESPNSituation;
-}
-
-interface ESPNSummary {
-  header?: {
-    competitions?: ESPNSummaryCompetition[];
-  };
-  gameInfo?: {
-    venue?: { fullName?: string };
-  };
-}
-
-function parseSummaryTeam(c: ESPNSummaryCompetitor): Team {
-  const abbreviation = ESPN_ABBR_MAP[c.team.abbreviation] ?? c.team.abbreviation;
-  return {
-    id: parseInt(c.team.id),
-    name: c.team.displayName,
-    abbreviation,
-    logoUrl: c.team.logos?.[0]?.href,
-    primaryColor: c.team.color ? `#${c.team.color}` : undefined,
-  };
-}
-
-// ── getWBCGameDetail ─────────────────────────────────────────────────
-
 /**
- * Fetch full detail for a single WBC game by its ESPN event ID.
- * Uses the ESPN summary endpoint, supplemented by scoreboard data for
- * linescores and situation (runners/count) when available.
+ * Fetch full game detail for a WBC game.
+ * Uses the MLB Stats API live feed — provides boxscore, play-by-play, and
+ * live situation data (runners, count, batter/pitcher).
+ * Cached 30s for live games, 5min for finished/scheduled.
  */
-export async function getWBCGameDetail(id: number): Promise<GameDetail> {
-  const cacheKey = `wbc:detail:${id}`;
+export async function getWBCGameDetail(gamePk: number): Promise<GameDetail> {
+  const cacheKey = `wbc:detail:${gamePk}`;
   const cached = gameCache.get<GameDetail>(cacheKey);
   if (cached) return cached;
 
-  const summaryUrl = `${ESPN_BASE}/summary?event=${id}`;
-  const res = await fetch(summaryUrl, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`ESPN WBC summary API ${res.status}: event=${id}`);
+  const detail = await fetchGameDetailFromLiveFeed(gamePk, WBC_LEAGUE, WBC_TEAM_COLORS);
+  enrichWBCDetail(detail);
 
-  const data = (await res.json()) as ESPNSummary;
-  const headerComp = data.header?.competitions?.[0];
-  if (!headerComp) throw new Error('ESPN WBC summary missing competition data');
+  const ttl = detail.status === 'live' ? 30 : 300;
+  gameCache.set(cacheKey, detail, ttl);
 
-  const competitors = headerComp.competitors;
-  const home = competitors.find((c) => c.homeAway === 'home');
-  const away = competitors.find((c) => c.homeAway === 'away');
-  if (!home || !away) throw new Error('ESPN WBC summary missing competitor data');
-
-  const status = mapStatus(headerComp.status.type.name, headerComp.status.type.state);
-  const isLive = status === 'live';
-
-  const homeTeam = parseSummaryTeam(home);
-  const awayTeam = parseSummaryTeam(away);
-
-  // Supplement with scoreboard data (linescore + live situation)
-  const gameDate = headerComp.date.slice(0, 10);
-  let linescore: LinescoreInning[] | undefined;
-  let homeHits: number | undefined = home.hits;
-  let awayHits: number | undefined = away.hits;
-  let homeErrors: number | undefined = home.errors;
-  let awayErrors: number | undefined = away.errors;
-  let scoreboard: Game | undefined;
-  try {
-    const games = await getWBCGames(gameDate);
-    scoreboard = games.find((g) => g.id === id);
-    if (scoreboard) {
-      linescore  = scoreboard.linescore;
-      homeHits   = scoreboard.homeHits   ?? homeHits;
-      awayHits   = scoreboard.awayHits   ?? awayHits;
-      homeErrors = scoreboard.homeErrors ?? homeErrors;
-      awayErrors = scoreboard.awayErrors ?? awayErrors;
-    }
-  } catch {
-    // Non-fatal — detail page still renders without linescore
-  }
-
-  const detail: GameDetail = {
-    id,
-    league: WBC_LEAGUE,
-    status,
-    scheduledTime: headerComp.date,
-    homeTeam,
-    awayTeam,
-    homeScore: parseInt(home.score ?? '0') || 0,
-    awayScore: parseInt(away.score ?? '0') || 0,
-    currentInning: isLive ? headerComp.status.period : undefined,
-    inningHalf: isLive ? mapInningHalf(headerComp.status.type.detail) : undefined,
-    linescore,
-    homeHits,
-    awayHits,
-    homeErrors,
-    awayErrors,
-    venue: data.gameInfo?.venue?.fullName,
-    homeColor: homeTeam.primaryColor,
-    awayColor: awayTeam.primaryColor,
-  };
-
-  if (isLive) {
-    // Priority 1: summary situation block
-    if (headerComp.situation) {
-      const sit = headerComp.situation;
-      detail.runnersOn = parseRunners(sit);
-      if (sit.outs !== undefined || sit.balls !== undefined || sit.strikes !== undefined) {
-        const outs = sit.outs ?? 0;
-        detail.outs = outs;
-        detail.count = { balls: sit.balls ?? 0, strikes: sit.strikes ?? 0, outs };
-      }
-    }
-    // Priority 2: scoreboard situation (more reliably present)
-    if (scoreboard) {
-      if (!detail.count     && scoreboard.count)    detail.count     = scoreboard.count;
-      if (!detail.runnersOn && scoreboard.runnersOn) detail.runnersOn = scoreboard.runnersOn;
-      if (detail.outs === undefined && scoreboard.outs !== undefined) detail.outs = scoreboard.outs;
-    }
-  }
-
-  gameCache.set(cacheKey, detail, isLive ? 30 : 300);
   return detail;
 }

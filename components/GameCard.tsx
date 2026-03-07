@@ -321,10 +321,19 @@ export default function GameCard({ game }: { game: Game }) {
         {isLive && game.count && game.runnersOn && (
           <div className="flex flex-col items-center gap-1 flex-shrink-0 pl-2 border-l border-surface-200">
             <Diamond runners={game.runnersOn} size={32} />
-            {game.currentPitcher && (
-              <span className="text-[9px] text-gray-400 truncate max-w-[60px]">
-                P: {game.currentPitcher.name.split(' ').pop()}
-              </span>
+            {(game.currentBatter || game.currentPitcher) && (
+              <div className="flex flex-col items-center text-[9px] text-gray-400 leading-tight">
+                {game.currentBatter && (
+                  <span className="truncate max-w-[60px]">
+                    AB: {game.currentBatter.name.split(' ').pop()}
+                  </span>
+                )}
+                {game.currentPitcher && (
+                  <span className="truncate max-w-[60px]">
+                    P: {game.currentPitcher.name.split(' ').pop()}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}

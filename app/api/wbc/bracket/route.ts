@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { gameCache } from '@/lib/cache';
-import { getRound } from '@/lib/wbc/bracketUtils';
+import { WBC_ABBR_MAP, WBC_TEAM_COLORS } from '@/lib/data-sources/wbc';
+import { withRetry } from '@/lib/retry';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,57 +31,56 @@ export interface WBCBracketData {
   championship: BracketGame[];
 }
 
-// ── ESPN API types ─────────────────────────────────────────────────────
+// ── MLB Stats API types ───────────────────────────────────────────────
 
-interface ESPNCompetitor {
-  homeAway: 'home' | 'away';
-  team: {
-    id: string;
-    abbreviation: string;
-    displayName: string;
-    color?: string;
-  };
-  score?: string;
-}
-
-interface ESPNEvent {
-  id: string;
-  competitions: {
-    startDate: string;
-    type?: { abbreviation?: string };
-    notes?: { type: string; headline: string }[];
-    competitors: ESPNCompetitor[];
+interface MLBScheduleResponse {
+  dates: {
+    date: string;
+    games: MLBBracketGame[];
   }[];
+}
+
+interface MLBBracketGame {
+  gamePk: number;
+  gameDate: string;
+  gameType: string; // D=Quarterfinal, L=Semifinal, W=Championship, F=Pool
   status: {
-    type: { name: string; state: string; completed: boolean };
+    abstractGameCode: string;
+    codedGameState: string;
+    statusCode: string;
   };
-  season?: { type?: number };
+  teams: {
+    home: { score?: number; team: { id: number; name: string; abbreviation?: string } };
+    away: { score?: number; team: { id: number; name: string; abbreviation?: string } };
+  };
+  description?: string;
 }
-
-interface ESPNScoreboard {
-  events?: ESPNEvent[];
-}
-
-// ── Abbreviation normalization ─────────────────────────────────────────
-const ESPN_ABBR_MAP: Record<string, string> = {
-  COL: 'CLM', // Colombia — COL conflicts with MLB Colorado Rockies
-};
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function mapStatus(name: string, state: string): 'scheduled' | 'live' | 'final' {
-  if (state === 'post' || name.toLowerCase().includes('final')) return 'final';
-  if (state === 'in') return 'live';
+function getRoundFromGameType(gameType: string): string | null {
+  switch (gameType) {
+    case 'D': return 'Quarterfinal';
+    case 'L': return 'Semifinal';
+    case 'W': return 'Championship';
+    default: return null; // F = pool play, excluded from bracket
+  }
+}
+
+function mapStatus(statusCode: string): 'scheduled' | 'live' | 'final' {
+  if (['F', 'FT', 'FR', 'FO', 'CR', 'GO'].includes(statusCode)) return 'final';
+  if (['I', 'MA', 'MB', 'MC'].includes(statusCode)) return 'live';
   return 'scheduled';
 }
 
-function parseTeam(c: ESPNCompetitor): BracketTeam {
-  const abbreviation = ESPN_ABBR_MAP[c.team.abbreviation] ?? c.team.abbreviation;
+function parseTeam(t: { id: number; name: string; abbreviation?: string }, score: number): BracketTeam {
+  const rawAbbr = t.abbreviation ?? t.name.slice(0, 3).toUpperCase();
+  const abbreviation = WBC_ABBR_MAP[rawAbbr] ?? rawAbbr;
   return {
     abbreviation,
-    name: c.team.displayName,
-    primaryColor: c.team.color ? `#${c.team.color}` : undefined,
-    score: parseInt(c.score ?? '0') || 0,
+    name: t.name,
+    primaryColor: WBC_TEAM_COLORS[t.id],
+    score,
   };
 }
 
@@ -103,30 +103,27 @@ const FINAL_PLACEHOLDERS = [
   { away: 'Winner SF1', home: 'Winner SF2' },
 ];
 
-function buildBracket(events: ESPNEvent[]): WBCBracketData {
+function buildBracket(games: MLBBracketGame[]): WBCBracketData {
   const qf: BracketGame[] = [];
   const sf: BracketGame[] = [];
   const ch: BracketGame[] = [];
 
-  for (const event of events) {
-    const round = getRound(event);
+  for (const g of games) {
+    const round = getRoundFromGameType(g.gameType);
     if (!round) continue;
 
-    const comp = event.competitions[0];
-    if (!comp) continue;
-
-    const home = comp.competitors.find((c) => c.homeAway === 'home');
-    const away = comp.competitors.find((c) => c.homeAway === 'away');
-    const status = mapStatus(event.status.type.name, event.status.type.state);
+    const home = g.teams.home;
+    const away = g.teams.away;
+    const status = mapStatus(g.status.statusCode);
 
     const game: BracketGame = {
-      id: parseInt(event.id),
-      homeTeam: home ? parseTeam(home) : null,
-      awayTeam: away ? parseTeam(away) : null,
+      id: g.gamePk,
+      homeTeam: home.team.name ? parseTeam(home.team, home.score ?? 0) : null,
+      awayTeam: away.team.name ? parseTeam(away.team, away.score ?? 0) : null,
       homePlaceholder: '',
       awayPlaceholder: '',
       status,
-      scheduledTime: comp.startDate,
+      scheduledTime: g.gameDate,
       round,
     };
 
@@ -159,7 +156,7 @@ function buildBracket(events: ESPNEvent[]): WBCBracketData {
     g.homePlaceholder = ph.home;
   });
 
-  // Pad with placeholder-only games if ESPN hasn't released the schedule yet
+  // Pad with placeholder-only games if the schedule hasn't been released yet
   while (qf.length < 4) {
     const i = qf.length;
     const ph = QF_PLACEHOLDERS[i];
@@ -191,18 +188,26 @@ export async function GET() {
   if (cached) return NextResponse.json(cached);
 
   try {
-    // Fetch WBC scoreboard for the full tournament window (March 2026)
+    // Fetch WBC schedule for the full tournament window (March 2026)
     const url =
-      'https://site.api.espn.com/apis/site/v2/sports/baseball/world-baseball-classic/scoreboard?limit=200&dates=20260301-20260325';
-    const res = await fetch(url, { cache: 'no-store' });
+      'https://statsapi.mlb.com/api/v1/schedule?sportId=51&startDate=2026-03-01&endDate=2026-03-25&hydrate=team';
 
-    if (!res.ok) {
-      return NextResponse.json({ quarterfinals: [], semifinals: [], championship: [] });
+    const res = await withRetry(
+      async () => {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`MLB WBC bracket API ${r.status}`);
+        return r;
+      },
+      { retries: 2, baseDelayMs: 500, source: 'wbc', label: 'bracket' },
+    );
+
+    const data = (await res.json()) as MLBScheduleResponse;
+    const allGames: MLBBracketGame[] = [];
+    for (const dateEntry of data.dates ?? []) {
+      allGames.push(...dateEntry.games);
     }
 
-    const data = (await res.json()) as ESPNScoreboard;
-    const events = data.events ?? [];
-    const bracket = buildBracket(events);
+    const bracket = buildBracket(allGames);
 
     gameCache.set(cacheKey, bracket, 300); // 5-min cache
     return NextResponse.json(bracket);

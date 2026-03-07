@@ -71,7 +71,7 @@ export const ALL_TEAMS: RegistryTeam[] = [
   { abbreviation: 'NCD', name: 'NC Dinos',        primaryColor: '#315288', leagueId: 3, leagueName: 'KBO' },
 
   // ── WBC (World Baseball Classic) — leagueId: 20 ──────────────────────
-  // Abbreviations match ESPN's WBC team abbreviations
+  // Abbreviations match registry values (MLB Stats API remaps COL→CLM, PUR→PRI in wbc.ts)
   { abbreviation: 'USA', name: 'United States',  primaryColor: '#002868', leagueId: 20, leagueName: 'WBC' },
   { abbreviation: 'JPN', name: 'Japan',          primaryColor: '#BC002D', leagueId: 20, leagueName: 'WBC' },
   { abbreviation: 'DOM', name: 'Dominican Rep.', primaryColor: '#002D62', leagueId: 20, leagueName: 'WBC' },

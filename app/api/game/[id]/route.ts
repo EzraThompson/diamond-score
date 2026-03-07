@@ -7,8 +7,10 @@ import { getWBCGameDetail } from '@/lib/data-sources/wbc';
 
 export const dynamic = 'force-dynamic';
 
-// ESPN game IDs are 9-digit numbers in the 400M+ range.
+// ESPN game IDs (NCAA) are 9-digit numbers in the 400M+ range.
 // MLB gamePks are currently ~700K–800K and won't reach this threshold.
+// WBC gamePks (from MLB Stats API, sportId=51) are in the same ~700K range as MLB,
+// so they MUST be disambiguated via the ?league=20 query parameter.
 // NPB IDs live in [2_000_000, 3_000_000) — checked first to avoid ambiguity.
 const ESPN_ID_THRESHOLD = 400_000_000;
 
