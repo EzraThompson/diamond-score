@@ -4,9 +4,20 @@ import type { Game } from '@/lib/types';
 import type { LeagueGroup } from '@/lib/buildScores';
 import GameCard from './GameCard';
 
+const COLLEGE_LEAGUE_ID = 16;
+
 interface FollowingSectionProps {
   leagues: LeagueGroup[];
   favoriteTeams: Set<string>;
+}
+
+function sortGames(games: Game[]): Game[] {
+  const order: Record<string, number> = { live: 0, final: 1, scheduled: 2, postponed: 3, delayed: 3 };
+  return [...games].sort((a, b) => {
+    const diff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
+    if (diff !== 0) return diff;
+    return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
+  });
 }
 
 export default function FollowingSection({ leagues, favoriteTeams }: FollowingSectionProps) {
@@ -14,7 +25,9 @@ export default function FollowingSection({ leagues, favoriteTeams }: FollowingSe
 
   // Collect all games where a followed team is playing (dedupe by game id)
   const seen = new Set<number>();
-  const games: Game[] = [];
+  const proGames: Game[] = [];
+  const collegeGames: Game[] = [];
+
   for (const league of leagues) {
     for (const g of league.games) {
       if (seen.has(g.id)) continue;
@@ -23,20 +36,21 @@ export default function FollowingSection({ leagues, favoriteTeams }: FollowingSe
         favoriteTeams.has(g.awayTeam.abbreviation)
       ) {
         seen.add(g.id);
-        games.push(g);
+        if (g.league?.id === COLLEGE_LEAGUE_ID) {
+          collegeGames.push(g);
+        } else {
+          proGames.push(g);
+        }
       }
     }
   }
 
-  if (games.length === 0) return null;
+  if (proGames.length === 0 && collegeGames.length === 0) return null;
 
-  // Sort: live first, then by scheduled time
-  const sorted = [...games].sort((a, b) => {
-    const order = { live: 0, final: 1, scheduled: 2, postponed: 3, delayed: 3 };
-    const diff = order[a.status] - order[b.status];
-    if (diff !== 0) return diff;
-    return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
-  });
+  const sortedPro = sortGames(proGames);
+  const sortedCollege = sortGames(collegeGames);
+  const totalCount = sortedPro.length + sortedCollege.length;
+  const hasBoth = sortedPro.length > 0 && sortedCollege.length > 0;
 
   return (
     <section className="mb-4">
@@ -54,14 +68,33 @@ export default function FollowingSection({ leagues, favoriteTeams }: FollowingSe
         <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex-1">
           Following
         </h2>
-        <span className="text-xs text-gray-400">{sorted.length}</span>
+        <span className="text-xs text-gray-400">{totalCount}</span>
       </div>
 
-      {/* Games */}
       <div className="flex flex-col gap-2 px-4">
-        {sorted.map((game) => (
-          <GameCard key={game.id} game={game} />
-        ))}
+        {/* Pro Teams */}
+        {sortedPro.length > 0 && (
+          <>
+            {hasBoth && (
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">Pro Teams</p>
+            )}
+            {sortedPro.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
+          </>
+        )}
+
+        {/* College */}
+        {sortedCollege.length > 0 && (
+          <>
+            {hasBoth && (
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-2">College</p>
+            )}
+            {sortedCollege.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
+          </>
+        )}
       </div>
 
       {/* Divider */}

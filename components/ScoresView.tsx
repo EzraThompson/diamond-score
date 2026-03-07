@@ -227,7 +227,7 @@ export default function ScoresView() {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pt-2 pb-4">
+      <div className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
         {/* No games today (all loaded, nothing scheduled) */}
         {allLoaded && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
@@ -240,7 +240,7 @@ export default function ScoresView() {
         {/* Following section — show once any slot has data */}
         {anyLoaded && favoriteTeams.size > 0 && (
           <ErrorBoundary label="Following">
-            <FollowingSection leagues={visibleLeagues} favoriteTeams={favoriteTeams} />
+            <FollowingSection leagues={allLeagues} favoriteTeams={favoriteTeams} />
           </ErrorBoundary>
         )}
 

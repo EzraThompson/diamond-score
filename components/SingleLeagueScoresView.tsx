@@ -136,7 +136,7 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pt-2 pb-4">
+      <div className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
         {!loading && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
             <span className="text-3xl">&#9918;</span>
@@ -149,9 +149,9 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
           <LeagueSkeleton key={`skeleton-${s.key}`} name={s.skeletonName} count={s.skeletonCount} />
         ))}
 
-        {!loading && favoriteTeams.size > 0 && visibleLeagues.length > 0 && (
+        {!loading && favoriteTeams.size > 0 && leagues.length > 0 && (
           <ErrorBoundary label="Following">
-            <FollowingSection leagues={visibleLeagues} favoriteTeams={favoriteTeams} />
+            <FollowingSection leagues={leagues} favoriteTeams={favoriteTeams} />
           </ErrorBoundary>
         )}
 

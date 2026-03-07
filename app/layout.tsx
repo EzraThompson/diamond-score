@@ -7,7 +7,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { ToastProvider } from '@/components/Toast';
 import ThemeApplier from '@/components/ThemeApplier';
 import Onboarding from '@/components/Onboarding';
-import InstallPrompt from '@/components/InstallPrompt';
+
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -134,7 +134,6 @@ export default function RootLayout({
                 </main>
                 <BottomNav />
               </div>
-              <InstallPrompt />
             </ToastProvider>
           </FavoritesProvider>
         </SettingsProvider>
