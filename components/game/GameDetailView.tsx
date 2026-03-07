@@ -77,7 +77,7 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
       <div className="relative z-10 flex items-center justify-between px-6 py-4">
         {/* Away team */}
         <div className="flex flex-col items-center gap-1.5 flex-1">
-          <TeamBadge abbreviation={detail.awayTeam.abbreviation} primaryColor={detail.awayColor} logoUrl={detail.awayTeam.logoUrl} size="lg" />
+          <TeamBadge abbreviation={detail.awayTeam.abbreviation} primaryColor={detail.awayColor} logoUrl={detail.awayTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
           <span className="text-sm font-bold text-gray-500">{detail.awayTeam.abbreviation}</span>
           <span className="text-3xl font-black tabular-nums font-mono text-gray-900">{detail.awayScore}</span>
         </div>
@@ -112,7 +112,7 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
 
         {/* Home team */}
         <div className="flex flex-col items-center gap-1.5 flex-1">
-          <TeamBadge abbreviation={detail.homeTeam.abbreviation} primaryColor={detail.homeColor} logoUrl={detail.homeTeam.logoUrl} size="lg" />
+          <TeamBadge abbreviation={detail.homeTeam.abbreviation} primaryColor={detail.homeColor} logoUrl={detail.homeTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
           <span className="text-sm font-bold text-gray-500">{detail.homeTeam.abbreviation}</span>
           <span className="text-3xl font-black tabular-nums font-mono text-gray-900">{detail.homeScore}</span>
         </div>
@@ -275,7 +275,7 @@ function LiveSituation({ detail }: { detail: GameDetail }) {
           {hasCount && (
             <div className="flex items-center gap-3 pt-0.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-gray-400">B-S</span>
+                <span className="text-[10px] text-gray-400">Count</span>
                 <span className="text-sm font-semibold tabular-nums font-mono text-gray-700">
                   {detail.count!.balls}-{detail.count!.strikes}
                 </span>
