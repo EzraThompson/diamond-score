@@ -2,7 +2,7 @@
  * WBC (World Baseball Classic) Data Source
  *
  * Uses ESPN's public scoreboard API for WBC games.
- * API: https://site.api.espn.com/apis/site/v2/sports/baseball/wbc/scoreboard
+ * API: https://site.api.espn.com/apis/site/v2/sports/baseball/world-baseball-classic/scoreboard
  *
  * WBC is a multi-round international tournament. Team abbreviations in ESPN's
  * API use IOC/WBSC country codes (USA, JPN, DOM, etc.).
@@ -24,7 +24,7 @@ import type {
 // ── Constants ────────────────────────────────────────────────────────
 
 const ESPN_BASE =
-  'https://site.api.espn.com/apis/site/v2/sports/baseball/wbc';
+  'https://site.api.espn.com/apis/site/v2/sports/baseball/world-baseball-classic';
 
 // ESPN uses different abbreviations for some WBC teams than our registry.
 // Map ESPN abbreviation → registry abbreviation.
