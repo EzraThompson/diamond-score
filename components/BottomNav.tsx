@@ -24,8 +24,9 @@ function NavIcon({ tab }: { tab: string }) {
   }
   if (tab === 'standings') {
     return (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M8 21v-8m4 8V9m4 12v-5m-8-4V3m4 2V3m4 4V3" strokeLinecap="round" />
+      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="3" x2="4" y2="21" />
+        <path d="M4 5 L20 10 L4 15 Z" />
       </svg>
     );
   }
@@ -51,8 +52,10 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const leagueRoutes = ['/mlb', '/npb', '/kbo', '/milb', '/ncaa'];
+
   function isActive(href: string) {
-    if (href === '/') return pathname === '/';
+    if (href === '/') return pathname === '/' || leagueRoutes.some((r) => pathname.startsWith(r));
     return pathname.startsWith(href);
   }
 

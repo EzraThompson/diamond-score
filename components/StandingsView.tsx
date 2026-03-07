@@ -543,7 +543,7 @@ export default function StandingsView() {
       </div>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-2">
         {/* NCAA: Top 25 rankings */}
         {leagueTab === 'ncaa' && (
           <NCAATab favoriteTeams={favoriteTeams} toggleTeam={toggleTeam} />
