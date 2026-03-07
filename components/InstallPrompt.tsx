@@ -64,7 +64,7 @@ export default function InstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label="Add DiamondScore to home screen"
+      aria-label="Add Play-o-Graph to home screen"
       className="fixed bottom-20 left-3 right-3 z-50 max-w-lg mx-auto"
     >
       <div className="bg-surface-50 border border-surface-300 rounded-2xl p-4 shadow-xl shadow-black/10 flex items-center gap-3">

@@ -7,6 +7,7 @@ import type { ScoresResult } from '@/lib/buildScores';
 import { useLiveStream } from '@/hooks/useLiveStream';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { ALL_TEAMS } from '@/lib/teamRegistry';
 import { useToast } from './Toast';
 import Header from './Header';
 import DateStrip from './DateStrip';
@@ -226,19 +227,27 @@ export default function ScoresView() {
         )}
 
         {/* All leagues — each wrapped in an error boundary */}
-        {visibleLeagues.map((league) => (
-          <ErrorBoundary key={league.id} label={league.name}>
-            <LeagueSection
-              name={league.name}
-              logoUrl={league.logoUrl}
-              games={league.games}
-              defaultCollapsed={isLeagueFav(league.id) ? false : league.defaultCollapsed}
-              showTop25Filter={league.showTop25Filter}
-              error={league.error}
-              stale={league.stale}
-            />
-          </ErrorBoundary>
-        ))}
+        {visibleLeagues.map((league) => {
+          // Expand if any favorite team belongs to this league (via registry or live game data)
+          const hasFavTeam =
+            ALL_TEAMS.some((t) => t.leagueId === league.id && favoriteTeams.has(t.abbreviation)) ||
+            league.games.some(
+              (g) => favoriteTeams.has(g.homeTeam.abbreviation) || favoriteTeams.has(g.awayTeam.abbreviation),
+            );
+          return (
+            <ErrorBoundary key={league.id} label={league.name}>
+              <LeagueSection
+                name={league.name}
+                logoUrl={league.logoUrl}
+                games={league.games}
+                defaultCollapsed={favoriteTeams.size === 0 ? league.defaultCollapsed : !hasFavTeam}
+                showTop25Filter={league.showTop25Filter}
+                error={league.error}
+                stale={league.stale}
+              />
+            </ErrorBoundary>
+          );
+        })}
 
         {/* Sync indicator */}
         <div className="text-center text-[10px] text-gray-600 py-2">

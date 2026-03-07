@@ -1,6 +1,6 @@
 {
-  "name": "DiamondScore",
-  "short_name": "DiamondScore",
+  "name": "Play-o-Graph",
+  "short_name": "Play-o-Graph",
   "description": "Live baseball scores from MLB, NPB, and KBO",
   "start_url": "/",
   "scope": "/",

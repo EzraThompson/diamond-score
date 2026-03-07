@@ -204,11 +204,17 @@ export async function getWBCGames(date: string): Promise<Game[]> {
 
   const res = await withRetry(
     async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
       const done = logger.timed('wbc', scoreboardUrl);
-      const r = await fetch(scoreboardUrl, { cache: 'no-store' });
-      done({ status: r.status, error: r.ok ? undefined : `HTTP ${r.status}` });
-      if (!r.ok) throw new Error(`ESPN WBC API ${r.status}`);
-      return r;
+      try {
+        const r = await fetch(scoreboardUrl, { cache: 'no-store', signal: controller.signal });
+        done({ status: r.status, error: r.ok ? undefined : `HTTP ${r.status}` });
+        if (!r.ok) throw new Error(`ESPN WBC API ${r.status}`);
+        return r;
+      } finally {
+        clearTimeout(timeout);
+      }
     },
     { retries: 2, baseDelayMs: 500, source: 'wbc', label: 'scoreboard' },
   );

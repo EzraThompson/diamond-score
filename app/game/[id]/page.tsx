@@ -28,7 +28,7 @@ export async function generateMetadata({
   const game = await fetchGameDetail(params.id);
 
   if (!game) {
-    return { title: 'Game | DiamondScore' };
+    return { title: 'Game | Play-o-Graph' };
   }
 
   const away = game.awayTeam.abbreviation;
@@ -37,9 +37,9 @@ export async function generateMetadata({
 
   let title: string;
   if (game.status === 'final' || game.status === 'live') {
-    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'} | DiamondScore`;
+    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'} | Play-o-Graph`;
   } else {
-    title = `${away} @ ${home} | DiamondScore`;
+    title = `${away} @ ${home} | Play-o-Graph`;
   }
 
   return {

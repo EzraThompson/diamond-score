@@ -101,7 +101,7 @@ export async function GET(
               fontFamily: 'system-ui, sans-serif',
             }}
           >
-            DiamondScore
+            Play-o-Graph
           </div>
           <div
             style={{
