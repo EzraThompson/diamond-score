@@ -24,7 +24,7 @@ export default function Diamond({ runners, size = 28 }: DiamondProps) {
       <polygon
         points={`${half},${off} ${s - off},${half} ${half},${s - off} ${off},${half}`}
         fill="none"
-        stroke="#3a4560"
+        stroke="#374151"
         strokeWidth="1"
       />
       {bases.map((b) => (
@@ -36,9 +36,9 @@ export default function Diamond({ runners, size = 28 }: DiamondProps) {
           height={baseSize}
           rx={1}
           transform={`rotate(45 ${b.x} ${b.y})`}
-          fill={b.on ? '#f59e0b' : '#283550'}
-          stroke={b.on ? '#f59e0b' : '#3a4560'}
-          strokeWidth="1"
+          fill={b.on ? '#f59e0b' : 'transparent'}
+          stroke={b.on ? '#f59e0b' : '#374151'}
+          strokeWidth="1.5"
         />
       ))}
     </svg>
