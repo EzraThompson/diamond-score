@@ -33,12 +33,27 @@ export default function LeagueSection({
   const liveCount = games.filter((g) => g.status === 'live').length;
   const badgeLabel = abbr ?? name.slice(0, 3).toUpperCase();
 
-  const visibleGames =
+  const STATUS_ORDER: Record<string, number> = { live: 0, scheduled: 1, final: 2, postponed: 3, delayed: 3 };
+  const filteredGames =
     showTop25Filter && top25Only
       ? games.filter(
           (g) => (g.homeTeam.rank ?? Infinity) <= 25 || (g.awayTeam.rank ?? Infinity) <= 25,
         )
       : games;
+  const now = Date.now();
+  const DAY_MS = 86_400_000;
+  const visibleGames = [...filteredGames].sort((a, b) => {
+    const diff = (STATUS_ORDER[a.status] ?? 4) - (STATUS_ORDER[b.status] ?? 4);
+    if (diff !== 0) return diff;
+    // For scheduled games whose timestamp is >3h in the past, bump by 24h so
+    // they sort after genuinely upcoming games (handles next-day early-AM starts
+    // whose UTC timestamp falls on the current calendar date).
+    let tA = new Date(a.scheduledTime).getTime();
+    let tB = new Date(b.scheduledTime).getTime();
+    if (a.status === 'scheduled' && now - tA > 3 * 3_600_000) tA += DAY_MS;
+    if (b.status === 'scheduled' && now - tB > 3 * 3_600_000) tB += DAY_MS;
+    return tA - tB;
+  });
 
   const rankedCount = showTop25Filter
     ? games.filter(
