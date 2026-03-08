@@ -253,9 +253,12 @@ const TEAM_COLORS: Record<number, string> = {
 
 function parseBatters(team: MLBBoxscoreTeam): BatterLine[] {
   const order = team.batters ?? [];
+  const pitcherIds = new Set(team.pitchers ?? []);
   return order.map((id) => {
     const p = team.players[`ID${id}`];
     if (!p) return null;
+    // Exclude pitchers from the batting lineup
+    if (pitcherIds.has(id) && p.position.type === 'Pitcher') return null;
     const b = p.stats.batting ?? {};
     return {
       id,
@@ -366,8 +369,8 @@ function mapInningHalf(linescore: MLBLinescore): InningHalf | undefined {
 function parseTeam(t: MLBGameTeam['team'], record?: MLBGameTeam['leagueRecord']): Team {
   return {
     id: t.id,
-    name: t.name,
-    abbreviation: t.abbreviation ?? t.name.slice(0, 3).toUpperCase(),
+    name: t.name ?? 'TBD',
+    abbreviation: t.abbreviation ?? (t.name ? t.name.slice(0, 3).toUpperCase() : 'TBD'),
     primaryColor: TEAM_COLORS[t.id],
     wins: record?.wins,
     losses: record?.losses,

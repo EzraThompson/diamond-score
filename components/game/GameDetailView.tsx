@@ -18,8 +18,16 @@ function getOrdinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+const SUFFIXES = new Set(['jr.', 'jr', 'sr.', 'sr', 'ii', 'iii', 'iv', 'v']);
+
 function lastName(fullName: string) {
-  return fullName.split(' ').pop() ?? fullName;
+  const parts = fullName.split(' ');
+  if (parts.length <= 1) return fullName;
+  const last = parts[parts.length - 1];
+  if (SUFFIXES.has(last.toLowerCase()) && parts.length > 2) {
+    return parts[parts.length - 2] + ' ' + last;
+  }
+  return last;
 }
 
 // ── Header ─────────────────────────────────────────────────────────────
