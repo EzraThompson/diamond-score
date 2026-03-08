@@ -71,9 +71,12 @@ export function calculateLeverageIndex(game: Game): LeverageResult {
 
   const li = Math.round(inningMult * closenessMult * halfMult * runnerAmp * 100) / 100;
 
+  // Graduated clutch threshold: harder to trigger early, easier late.
+  const clutchThreshold = inning >= 9 ? 1.5 : inning >= 7 ? 2.0 : 3.0;
+
   return {
     leverageIndex: li,
-    isClutch: li >= 2.0,
-    intensity: li >= 4.0 ? 'extreme' : li >= 2.0 ? 'high' : 'normal',
+    isClutch: li >= clutchThreshold,
+    intensity: li >= 4.0 ? 'extreme' : li >= 2.0 ? 'high' : li >= clutchThreshold ? 'high' : 'normal',
   };
 }
