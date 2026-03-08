@@ -73,7 +73,7 @@ export function calculateLeverageIndex(game: Game): LeverageResult {
 
   return {
     leverageIndex: li,
-    isClutch: li >= 4.0,
-    intensity: li >= 6.0 ? 'extreme' : li >= 4.0 ? 'high' : 'normal',
+    isClutch: li >= 2.0,
+    intensity: li >= 4.0 ? 'extreme' : li >= 2.0 ? 'high' : 'normal',
   };
 }
