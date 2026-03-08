@@ -8,8 +8,6 @@ import type { ClutchStyle, ScoreAnimation } from '@/contexts/SettingsContext';
 import { calculateLeverageIndex, type LeverageResult } from '@/lib/leverageIndex';
 import Diamond from './Diamond';
 import TeamBadge from './TeamBadge';
-import StarButton from './StarButton';
-import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
 // ── Score transition hook (replaces useCountUp) ──────────────────────
@@ -239,7 +237,7 @@ function Linescore({ game }: { game: Game }) {
       <table className="linescore-table text-[10px] text-gray-400 w-full">
         <thead>
           <tr>
-            <th className="text-left font-semibold w-10" />
+            <th className="!text-left font-semibold w-10 !pl-0" />
             {innings.map((inn) => (
               <th key={inn.inning} className="font-semibold text-gray-400">{inn.inning}</th>
             ))}
@@ -250,7 +248,7 @@ function Linescore({ game }: { game: Game }) {
         </thead>
         <tbody>
           <tr>
-            <td className="text-left font-bold text-[10px] text-gray-500">{game.awayTeam.abbreviation}</td>
+            <td className="!text-left font-bold text-[10px] text-gray-500 !pl-0">{game.awayTeam.abbreviation}</td>
             {innings.map((inn) => (
               <td key={inn.inning} className="text-gray-500">{inn.away ?? '-'}</td>
             ))}
@@ -259,7 +257,7 @@ function Linescore({ game }: { game: Game }) {
             <td className="text-gray-500">{game.awayErrors ?? 0}</td>
           </tr>
           <tr>
-            <td className="text-left font-bold text-[10px] text-gray-500">{game.homeTeam.abbreviation}</td>
+            <td className="!text-left font-bold text-[10px] text-gray-500 !pl-0">{game.homeTeam.abbreviation}</td>
             {innings.map((inn) => (
               <td key={inn.inning} className="text-gray-500">{inn.home ?? '-'}</td>
             ))}
@@ -304,12 +302,9 @@ function CardContent({
   setExpanded: (fn: (v: boolean) => boolean) => void;
   router: ReturnType<typeof useRouter>;
 }) {
-  const { isTeamFav, toggleTeam } = useFavorites();
-
   function handleClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement;
     if (target.closest('[data-expand]')) { setExpanded((v) => !v); return; }
-    if (target.closest('[data-star]')) return;
     if (target.closest('[data-spoiler]')) { setSpoilerRevealed(true); return; }
     router.push(`/game/${game.id}?league=${game.league.id}`);
   }
@@ -354,19 +349,13 @@ function CardContent({
                   #{game.awayTeam.rank}
                 </span>
               )}
-              <span className="inline-block w-10">{game.awayTeam.abbreviation}</span>
+              <span className="inline-block w-10 font-mono">{game.awayTeam.abbreviation}</span>
               {game.awayTeam.wins !== undefined && (
                 <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
                   {game.awayTeam.wins}-{game.awayTeam.losses}
                 </span>
               )}
             </span>
-            <div data-star className="flex items-center">
-              <StarButton
-                active={isTeamFav(game.awayTeam.abbreviation)}
-                onToggle={(e) => { e.stopPropagation(); toggleTeam(game.awayTeam.abbreviation); }}
-              />
-            </div>
             {isScheduled ? (
               <span className={`${scoreBase} text-gray-300`} />
             ) : spoilerActive ? (
@@ -388,19 +377,13 @@ function CardContent({
                   #{game.homeTeam.rank}
                 </span>
               )}
-              <span className="inline-block w-10">{game.homeTeam.abbreviation}</span>
+              <span className="inline-block w-10 font-mono">{game.homeTeam.abbreviation}</span>
               {game.homeTeam.wins !== undefined && (
                 <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
                   {game.homeTeam.wins}-{game.homeTeam.losses}
                 </span>
               )}
             </span>
-            <div data-star className="flex items-center">
-              <StarButton
-                active={isTeamFav(game.homeTeam.abbreviation)}
-                onToggle={(e) => { e.stopPropagation(); toggleTeam(game.homeTeam.abbreviation); }}
-              />
-            </div>
             {isScheduled ? (
               <span className={`${scoreBase} text-gray-300`} />
             ) : spoilerActive ? (
@@ -458,8 +441,11 @@ function CardContent({
 
       {/* Expand hint */}
       {(game.status === 'live' || game.status === 'final') && game.linescore?.length && !spoilerActive && (
-        <div className="flex justify-center -mb-1" data-expand="true">
-          <div className="px-4 py-1.5 cursor-pointer" data-expand="true">
+        <div className="flex items-center -mb-1" data-expand="true">
+          {expanded && (
+            <span className="text-[8px] text-gray-300">Tap card for game detail</span>
+          )}
+          <div className="mx-auto px-4 py-1.5 cursor-pointer" data-expand="true">
             <svg
               className={`w-5 h-5 text-gray-300 transition-transform ${expanded ? 'rotate-180' : ''}`}
               viewBox="0 0 24 24"
@@ -470,6 +456,7 @@ function CardContent({
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </div>
+          {expanded && <span className="invisible text-[8px]">Tap card for game detail</span>}
         </div>
       )}
     </div>

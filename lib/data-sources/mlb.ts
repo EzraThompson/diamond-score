@@ -311,12 +311,14 @@ function parsePlays(allPlays: MLBFullLiveFeed['liveData']['plays']['allPlays']):
 interface MLBStandingsResponse {
   records: {
     division: { id: number; name: string; abbreviation: string };
+    league?: { id: number; name: string };
     teamRecords: {
       team: { id: number; name: string; abbreviation?: string };
       wins: number;
       losses: number;
       winningPercentage: string;
       gamesBack: string;
+      wildCardGamesBack?: string;
       streak: { streakCode: string };
       records: {
         splitRecords: { type: string; wins: number; losses: number }[];
@@ -564,6 +566,55 @@ export async function getMLBStandings(season: number): Promise<Standing[]> {
         losses: rec.losses,
         pct: parseFloat(rec.winningPercentage),
         gamesBack: rec.gamesBack === '-' ? 0 : parseFloat(rec.gamesBack),
+        streak: rec.streak.streakCode,
+        last10: last10 ? `${last10.wins}-${last10.losses}` : '',
+        runsScored: rec.runsScored,
+        runsAllowed: rec.runsAllowed,
+      });
+    }
+  }
+
+  standingsCache.set(cacheKey, standings);
+  return standings;
+}
+
+/**
+ * Fetch wild card standings grouped by league (AL / NL).
+ * Each team gets a `wildCardGamesBack` value and is sorted by W%.
+ */
+export async function getMLBWildCardStandings(season: number): Promise<Standing[]> {
+  const cacheKey = `mlb:wildcard:${season}`;
+  const cached = standingsCache.get<Standing[]>(cacheKey);
+  if (cached) return cached;
+
+  const data = await mlbFetch<MLBStandingsResponse>(
+    `${MLB_API}/standings?leagueId=103,104&season=${season}&standingsTypes=wildCard&hydrate=team,division`
+  );
+
+  const standings: Standing[] = [];
+
+  for (const record of data.records) {
+    // Wild card standings group by league, not division
+    const leagueName = record.league?.name ?? record.division.name;
+    for (const rec of record.teamRecords) {
+      const last10 = rec.records.splitRecords.find((s) => s.type === 'lastTen');
+      const wcgb = rec.wildCardGamesBack
+        ? (rec.wildCardGamesBack === '-' ? 0 : parseFloat(rec.wildCardGamesBack))
+        : (rec.gamesBack === '-' ? 0 : parseFloat(rec.gamesBack));
+
+      standings.push({
+        team: {
+          id: rec.team.id,
+          name: rec.team.name,
+          abbreviation: rec.team.abbreviation ?? rec.team.name.slice(0, 3).toUpperCase(),
+          logoUrl: `https://www.mlbstatic.com/team-logos/${rec.team.id}.svg`,
+        },
+        division: leagueName,
+        wins: rec.wins,
+        losses: rec.losses,
+        pct: parseFloat(rec.winningPercentage),
+        gamesBack: rec.gamesBack === '-' ? 0 : parseFloat(rec.gamesBack),
+        wildCardGamesBack: wcgb,
         streak: rec.streak.streakCode,
         last10: last10 ? `${last10.wins}-${last10.losses}` : '',
         runsScored: rec.runsScored,

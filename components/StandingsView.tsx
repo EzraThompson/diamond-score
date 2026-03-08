@@ -92,11 +92,15 @@ function DivisionTable({
   playoffSpots = 1,
   showRD = false,
   showPythag = false,
+  hideStreakL10 = false,
+  showWCGB = false,
 }: {
   division: DivisionGroup;
   playoffSpots?: number;
   showRD?: boolean;
   showPythag?: boolean;
+  hideStreakL10?: boolean;
+  showWCGB?: boolean;
 }) {
   return (
     <div className="mb-4">
@@ -113,9 +117,10 @@ function DivisionTable({
               <th className="text-center py-2 px-2 font-semibold">L</th>
               <th className="text-center py-2 px-2 font-semibold">PCT</th>
               <th className="text-center py-2 px-2 font-semibold">GB</th>
+              {showWCGB && <th className="text-center py-2 px-2 font-semibold">WCGB</th>}
               {showRD && <th className="text-center py-2 px-2 font-semibold">RD</th>}
-              <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">L10</th>
-              <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">STK</th>
+              {!hideStreakL10 && <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">L10</th>}
+              {!hideStreakL10 && <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">STK</th>}
               {showPythag && (
                 <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell" title="Pythagorean W-L">xW-L</th>
               )}
@@ -187,6 +192,11 @@ function DivisionTable({
                   <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500">
                     {row.gamesBack === 0 ? '—' : row.gamesBack}
                   </td>
+                  {showWCGB && (
+                    <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500">
+                      {row.wildCardGamesBack == null || row.wildCardGamesBack === 0 ? '—' : row.wildCardGamesBack}
+                    </td>
+                  )}
                   {showRD && (
                     <td
                       className={`py-2.5 px-2 text-center tabular-nums text-xs font-semibold ${
@@ -202,22 +212,26 @@ function DivisionTable({
                       {rd == null ? '—' : rd > 0 ? `+${rd}` : rd}
                     </td>
                   )}
-                  <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500 hidden sm:table-cell">
-                    {row.last10}
-                  </td>
-                  <td className="py-2.5 px-2 text-center tabular-nums text-xs hidden sm:table-cell">
-                    <span
-                      className={
-                        row.streak.startsWith('W')
-                          ? 'text-accent font-semibold'
-                          : row.streak.startsWith('L')
-                          ? 'text-red-400 font-semibold'
-                          : 'text-gray-500'
-                      }
-                    >
-                      {row.streak}
-                    </span>
-                  </td>
+                  {!hideStreakL10 && (
+                    <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500 hidden sm:table-cell">
+                      {row.last10}
+                    </td>
+                  )}
+                  {!hideStreakL10 && (
+                    <td className="py-2.5 px-2 text-center tabular-nums text-xs hidden sm:table-cell">
+                      <span
+                        className={
+                          row.streak.startsWith('W')
+                            ? 'text-accent font-semibold'
+                            : row.streak.startsWith('L')
+                            ? 'text-red-400 font-semibold'
+                            : 'text-gray-500'
+                        }
+                      >
+                        {row.streak}
+                      </span>
+                    </td>
+                  )}
                   {showPythag && (
                     <td className="py-2.5 px-2 text-center tabular-nums text-xs text-gray-500 hidden sm:table-cell">
                       {pythagStr}
@@ -394,7 +408,7 @@ function WBCPoolsView() {
   return (
     <div className="pt-3 pb-4">
       {data.pools.map((pool) => (
-        <DivisionTable key={pool.name} division={pool} playoffSpots={2} showRD={true} />
+        <DivisionTable key={pool.name} division={pool} playoffSpots={2} showRD={true} hideStreakL10={true} />
       ))}
     </div>
   );
@@ -464,10 +478,13 @@ function ComingSoon({ league }: { league: string }) {
 
 // ── View ───────────────────────────────────────────────────────────────
 
+type MLBView = 'divisions' | 'wildcard';
+
 export default function StandingsView() {
   const { favoriteTeams, toggleTeam } = useFavorites();
 
   const [leagueTab, setLeagueTab]   = useState<LeagueTab>('wbc');
+  const [mlbView, setMlbView]       = useState<MLBView>('divisions');
   const [milbLevel, setMilbLevel]   = useState<MiLBLevel>(MILB_LEVELS[0]);
   const [data, setData]             = useState<StandingsData | null>(null);
   const [loading, setLoading]       = useState(true);
@@ -485,10 +502,12 @@ export default function StandingsView() {
     setError(null);
     setData(null);
 
-    const url =
-      leagueTab === 'mlb'
-        ? '/api/standings'
-        : `/api/standings/milb?level=${milbLevel.id}`;
+    let url: string;
+    if (leagueTab === 'mlb') {
+      url = mlbView === 'wildcard' ? '/api/standings?view=wildcard' : '/api/standings';
+    } else {
+      url = `/api/standings/milb?level=${milbLevel.id}`;
+    }
 
     fetch(url)
       .then((r) => {
@@ -498,7 +517,7 @@ export default function StandingsView() {
       .then(setData)
       .catch(() => setError('Failed to load standings'))
       .finally(() => setLoading(false));
-  }, [leagueTab, milbLevel]);
+  }, [leagueTab, milbLevel, mlbView]);
 
   return (
     <div className="flex flex-col min-h-0">
@@ -521,6 +540,28 @@ export default function StandingsView() {
             </button>
           ))}
         </div>
+
+        {/* MLB view sub-tabs: Divisions | Wild Card */}
+        {leagueTab === 'mlb' && (
+          <div className="flex gap-1 px-4 pb-2 overflow-x-auto no-scrollbar">
+            {([
+              { id: 'divisions' as MLBView, label: 'Divisions' },
+              { id: 'wildcard' as MLBView, label: 'Wild Card' },
+            ]).map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setMlbView(v.id)}
+                className={`flex-shrink-0 text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+                  mlbView === v.id
+                    ? 'bg-gray-700 text-white'
+                    : 'bg-surface-100 text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* MiLB level sub-tabs */}
         {leagueTab === 'milb' && (
@@ -569,7 +610,14 @@ export default function StandingsView() {
               </div>
             )}
             {data?.divisions.map((div) => (
-              <DivisionTable key={div.name} division={div} showRD={true} showPythag={true} />
+              <DivisionTable
+                key={div.name}
+                division={div}
+                showRD={true}
+                showPythag={leagueTab === 'mlb'}
+                showWCGB={leagueTab === 'mlb' && mlbView === 'wildcard'}
+                playoffSpots={leagueTab === 'mlb' && mlbView === 'wildcard' ? 3 : 1}
+              />
             ))}
           </>
         )}

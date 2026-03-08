@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import Diamond from '@/components/Diamond';
 import TeamBadge from '@/components/TeamBadge';
 import FeedbackModal from '@/components/FeedbackModal';
+import StarButton from '@/components/StarButton';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import type { GameDetail, BatterLine, PitcherLine, Pitch, PlayEvent, ScheduleNavGame } from '@/lib/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -22,7 +24,7 @@ function lastName(fullName: string) {
 
 // ── Header ─────────────────────────────────────────────────────────────
 
-function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void }) {
+function GameHeader({ detail, onBack, isTeamFav, toggleTeam }: { detail: GameDetail; onBack: () => void; isTeamFav: (abbr: string) => boolean; toggleTeam: (abbr: string) => void }) {
   const isLive = detail.status === 'live';
   const isFinal = detail.status === 'final';
 
@@ -79,7 +81,10 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
         {/* Away team */}
         <div className="flex flex-col items-center gap-1.5 flex-1">
           <TeamBadge abbreviation={detail.awayTeam.abbreviation} primaryColor={detail.awayColor} logoUrl={detail.awayTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
-          <span className="text-sm font-bold text-gray-500">{detail.awayTeam.abbreviation}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-bold text-gray-500">{detail.awayTeam.abbreviation}</span>
+            <StarButton active={isTeamFav(detail.awayTeam.abbreviation)} onToggle={() => toggleTeam(detail.awayTeam.abbreviation)} size={14} />
+          </div>
           <span className="text-3xl font-black tabular-nums font-sans text-gray-900">{detail.awayScore}</span>
         </div>
 
@@ -114,7 +119,10 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
         {/* Home team */}
         <div className="flex flex-col items-center gap-1.5 flex-1">
           <TeamBadge abbreviation={detail.homeTeam.abbreviation} primaryColor={detail.homeColor} logoUrl={detail.homeTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
-          <span className="text-sm font-bold text-gray-500">{detail.homeTeam.abbreviation}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-bold text-gray-500">{detail.homeTeam.abbreviation}</span>
+            <StarButton active={isTeamFav(detail.homeTeam.abbreviation)} onToggle={() => toggleTeam(detail.homeTeam.abbreviation)} size={14} />
+          </div>
           <span className="text-3xl font-black tabular-nums font-sans text-gray-900">{detail.homeScore}</span>
         </div>
       </div>
@@ -827,6 +835,7 @@ function PrevNextNav({ detail }: { detail: GameDetail }) {
 
 export default function GameDetailView({ id, leagueId }: { id: number; leagueId?: number }) {
   const router = useRouter();
+  const { isTeamFav, toggleTeam } = useFavorites();
   const [detail, setDetail] = useState<GameDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -881,7 +890,7 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
 
   return (
     <div className="flex flex-col min-h-0">
-      <GameHeader detail={detail} onBack={() => router.back()} />
+      <GameHeader detail={detail} onBack={() => router.back()} isTeamFav={isTeamFav} toggleTeam={toggleTeam} />
       <TabBar active={tab} onChange={setTab} showPbp={hasPlays} />
 
       <div>

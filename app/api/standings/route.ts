@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { getMLBStandings } from '@/lib/data-sources/mlb';
+import { NextRequest, NextResponse } from 'next/server';
+import { getMLBStandings, getMLBWildCardStandings } from '@/lib/data-sources/mlb';
 import type { Standing } from '@/lib/types';
 
 export const revalidate = 300; // 5 minutes
@@ -19,10 +19,14 @@ export interface DivisionGroup {
   rows: Standing[];
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const view = request.nextUrl.searchParams.get('view');
+
   try {
     const season = currentSeason();
-    const standings = await getMLBStandings(season);
+    const standings = view === 'wildcard'
+      ? await getMLBWildCardStandings(season)
+      : await getMLBStandings(season);
 
     // Group by division
     const divMap = new Map<string, Standing[]>();
@@ -53,7 +57,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ season, divisions }, {
+    return NextResponse.json({ season, divisions, view: view ?? 'divisions' }, {
       headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
     });
   } catch (err) {

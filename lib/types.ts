@@ -95,6 +95,7 @@ export interface Standing {
   last10: string;
   runsScored?: number;
   runsAllowed?: number;
+  wildCardGamesBack?: number;
 }
 
 // ── Game detail (live feed enriched) ────────────────────────────────
