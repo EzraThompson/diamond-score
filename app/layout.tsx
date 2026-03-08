@@ -109,6 +109,12 @@ export default function RootLayout({
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <link rel="preconnect" href="https://midfield.mlbstatic.com" />
         <link rel="dns-prefetch" href="https://midfield.mlbstatic.com" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-RTWVJQFF0C" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-RTWVJQFF0C');`,
+          }}
+        />
       </head>
       <body className="font-sans antialiased bg-surface text-gray-900">
         <script
