@@ -15,6 +15,7 @@ import type {
   InningHalf,
   League,
   LinescoreInning,
+  Pitch,
   PitcherLine,
   PlayEvent,
   PlayerInfo,
@@ -196,6 +197,22 @@ interface MLBFullLiveFeed {
           pitcher: { id: number; fullName: string };
         };
         runners: { movement: { start?: string; end?: string; isOut?: boolean } }[];
+        playEvents?: {
+          isPitch: boolean;
+          details: {
+            type?: { code: string; description: string };
+            call?: { code: string; description: string };
+            isStrike: boolean;
+            isBall: boolean;
+            isInPlay: boolean;
+          };
+          pitchData?: {
+            startSpeed: number;
+            coordinates: { pX: number; pZ: number };
+            strikeZoneTop: number;
+            strikeZoneBottom: number;
+          };
+        }[];
       };
     };
     linescore: MLBLinescore & {
@@ -678,6 +695,26 @@ export async function fetchGameDetailFromLiveFeed(
     detail.currentPitcher = toPlayer(cp.matchup.pitcher);
     detail.lastPlayDescription = cp.result.description;
     detail.lastPlayEvent = cp.result.event;
+
+    // Parse pitch-by-pitch data for strike zone visualization
+    if (cp.playEvents) {
+      const pitchEvents = cp.playEvents.filter((e) => e.isPitch && e.pitchData);
+      if (pitchEvents.length > 0) {
+        detail.currentAtBatPitches = pitchEvents.map((p): Pitch => ({
+          pX: p.pitchData!.coordinates.pX,
+          pZ: p.pitchData!.coordinates.pZ,
+          type: p.details.type?.code ?? '??',
+          typeName: p.details.type?.description ?? 'Unknown',
+          call: p.details.call?.code ?? '?',
+          speed: p.pitchData!.startSpeed,
+          isStrike: p.details.isStrike,
+          isBall: p.details.isBall,
+          isInPlay: p.details.isInPlay,
+        }));
+        detail.strikeZoneTop = pitchEvents[0].pitchData!.strikeZoneTop;
+        detail.strikeZoneBottom = pitchEvents[0].pitchData!.strikeZoneBottom;
+      }
+    }
   }
 
   const bsTeams = liveData.boxscore.teams;
@@ -729,7 +766,7 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     if (awayNav.next) detail.nextGameAway = awayNav.next;
   }
 
-  const ttl = detail.status === 'live' || detail.status === 'delayed' ? 10 : 300;
+  const ttl = detail.status === 'live' || detail.status === 'delayed' ? 4 : 300;
   gameCache.set(cacheKey, detail, ttl);
 
   return detail;

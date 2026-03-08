@@ -129,7 +129,7 @@ export async function getWBCGameDetail(gamePk: number): Promise<GameDetail> {
   const detail = await fetchGameDetailFromLiveFeed(gamePk, WBC_LEAGUE, WBC_TEAM_COLORS);
   enrichWBCDetail(detail);
 
-  const ttl = detail.status === 'live' ? 30 : 300;
+  const ttl = detail.status === 'live' ? 4 : 300;
   gameCache.set(cacheKey, detail, ttl);
 
   return detail;

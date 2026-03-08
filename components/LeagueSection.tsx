@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import GameCard from './GameCard';
 import ErrorBoundary from './ErrorBoundary';
+import type { Game } from '@/lib/types';
 
 interface LeagueSectionProps {
   name: string;

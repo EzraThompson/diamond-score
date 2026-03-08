@@ -7,7 +7,7 @@ import TeamPicker from '@/components/TeamPicker';
 import TeamBadge from '@/components/TeamBadge';
 import { findTeam } from '@/lib/teamRegistry';
 import { storageSet } from '@/lib/storage';
-import { SLOT_LIST, getOrderedSlots } from '@/lib/slots';
+import { getOrderedSlots } from '@/lib/slots';
 import type { NCAARankingsData, RankedCollegeTeam } from '@/lib/types';
 
 // ── Toggle switch ──────────────────────────────────────────────────────

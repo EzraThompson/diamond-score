@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import Diamond from '@/components/Diamond';
 import TeamBadge from '@/components/TeamBadge';
 import FeedbackModal from '@/components/FeedbackModal';
-import type { GameDetail, BatterLine, PitcherLine, PlayEvent, ScheduleNavGame } from '@/lib/types';
+import type { GameDetail, BatterLine, PitcherLine, Pitch, PlayEvent, ScheduleNavGame } from '@/lib/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -243,6 +243,102 @@ function LinescoreTab({ detail }: { detail: GameDetail }) {
   );
 }
 
+// ── Strike zone ───────────────────────────────────────────────────────
+
+const PLATE_HALF_W = 0.708; // 17 inches / 2 / 12 = feet
+const ZONE_DEFAULT_TOP = 3.5;
+const ZONE_DEFAULT_BOT = 1.5;
+
+function pitchColor(p: Pitch): string {
+  if (p.isBall) return '#22c55e';           // green — ball
+  if (p.isInPlay) return '#3b82f6';          // blue — in play
+  const c = p.call;
+  if (c === 'C') return '#ef4444';           // red — called strike
+  if ('SWT'.includes(c)) return '#ef4444';   // red — swinging strike
+  if ('FLR'.includes(c)) return '#ef4444';   // red — foul
+  return '#9ca3af';                          // gray fallback
+}
+
+function StrikeZone({ pitches, zoneTop, zoneBot }: {
+  pitches: Pitch[];
+  zoneTop: number;
+  zoneBot: number;
+}) {
+  const top = zoneTop || ZONE_DEFAULT_TOP;
+  const bot = zoneBot || ZONE_DEFAULT_BOT;
+  const zoneH = top - bot;
+
+  // Fixed bounds: zone + ~60% padding on each side — never changes with pitch positions
+  const pad = zoneH * 0.6;
+  const boundLeft = -(PLATE_HALF_W + pad);
+  const boundRight = PLATE_HALF_W + pad;
+  const boundTop = top + pad;
+  const boundBot = bot - pad;
+
+  // Clamp margin: pitches beyond this are clamped to the edge
+  const r = 0.12;
+  const clampL = boundLeft + r + 0.02;
+  const clampR = boundRight - r - 0.02;
+  const clampT = boundTop - r - 0.02;
+  const clampB = boundBot + r + 0.02;
+
+  const vW = boundRight - boundLeft;
+  const vH = boundTop - boundBot;
+
+  // Y is inverted: higher pZ = lower SVG y. ViewBox starts at 0.
+  const toX = (pX: number) => pX;
+  const toY = (pZ: number) => boundTop - pZ;
+
+  const zoneLeft = -PLATE_HALF_W;
+  const zoneRight = PLATE_HALF_W;
+  const zoneW = zoneRight - zoneLeft;
+
+  return (
+    <svg
+      viewBox={`${boundLeft} 0 ${vW} ${vH}`}
+      className="w-24 h-24 flex-shrink-0 -mt-4"
+    >
+      {/* Zone background */}
+      <rect
+        x={zoneLeft} y={toY(top)} width={zoneW} height={zoneH}
+        fill="rgba(0,0,0,0.03)" stroke="#d1d5db" strokeWidth={0.03}
+      />
+      {/* 3x3 grid */}
+      {[1, 2].map((i) => (
+        <line key={`h${i}`}
+          x1={zoneLeft} y1={toY(bot + (zoneH * i) / 3)}
+          x2={zoneRight} y2={toY(bot + (zoneH * i) / 3)}
+          stroke="#e5e7eb" strokeWidth={0.015} strokeDasharray="0.04 0.04"
+        />
+      ))}
+      {[1, 2].map((i) => (
+        <line key={`v${i}`}
+          x1={zoneLeft + (zoneW * i) / 3} y1={toY(top)}
+          x2={zoneLeft + (zoneW * i) / 3} y2={toY(bot)}
+          stroke="#e5e7eb" strokeWidth={0.015} strokeDasharray="0.04 0.04"
+        />
+      ))}
+      {/* Pitch dots — clamped with arrows for outliers */}
+      {pitches.map((p, i) => {
+        const rawX = p.pX;
+        const rawZ = p.pZ;
+        const cx = Math.max(clampL, Math.min(clampR, toX(rawX)));
+        const cy = Math.max(toY(clampT), Math.min(toY(clampB), toY(rawZ)));
+        const color = pitchColor(p);
+
+        return (
+          <g key={i}>
+            <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.85} />
+            <text x={cx} y={cy + 0.045}
+              textAnchor="middle" fontSize={0.11} fontWeight="bold" fill="white"
+            >{i + 1}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ── Live situation ─────────────────────────────────────────────────────
 
 function LiveSituation({ detail }: { detail: GameDetail }) {
@@ -255,49 +351,54 @@ function LiveSituation({ detail }: { detail: GameDetail }) {
         Current Situation
       </p>
 
-      <div className="flex items-center gap-4">
-        <Diamond runners={runners} size={52} />
-
-        <div className="flex-1 space-y-1.5">
-          {detail.currentPitcher && (
+      <div className="flex items-start gap-3">
+        {/* Left: Diamond + Count/Outs */}
+        <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <Diamond runners={runners} size={48} />
+          {hasCount && (
             <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold tabular-nums font-mono text-gray-700">
+                {detail.count!.balls}-{detail.count!.strikes}
+              </span>
+              <span className="flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className={`w-2 h-2 rounded-full ${
+                      i < (detail.outs ?? 0) ? 'bg-yellow-400' : 'bg-surface-200'
+                    }`}
+                  />
+                ))}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Middle: Strike zone (always visible) */}
+        <StrikeZone
+          pitches={detail.currentAtBatPitches ?? []}
+          zoneTop={detail.strikeZoneTop ?? ZONE_DEFAULT_TOP}
+          zoneBot={detail.strikeZoneBottom ?? ZONE_DEFAULT_BOT}
+        />
+
+        {/* Right: P / AB / OD */}
+        <div className="flex-1 min-w-0 space-y-1">
+          {detail.currentPitcher && (
+            <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-semibold text-gray-400 w-5 flex-shrink-0">P</span>
-              <span className="text-xs text-gray-600">{detail.currentPitcher.name}</span>
+              <span className="text-xs text-gray-600 truncate">{detail.currentPitcher.name}</span>
             </div>
           )}
           {detail.currentBatter && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-semibold text-gray-400 w-5 flex-shrink-0">AB</span>
-              <span className="text-xs text-gray-900 font-semibold">{detail.currentBatter.name}</span>
+              <span className="text-xs text-gray-900 font-semibold truncate">{detail.currentBatter.name}</span>
             </div>
           )}
           {detail.onDeckBatter && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-semibold text-gray-400 w-5 flex-shrink-0">OD</span>
-              <span className="text-xs text-gray-500">{detail.onDeckBatter.name}</span>
-            </div>
-          )}
-          {hasCount && (
-            <div className="flex items-center gap-3 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-gray-400">Count</span>
-                <span className="text-sm font-semibold tabular-nums font-mono text-gray-700">
-                  {detail.count!.balls}-{detail.count!.strikes}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-gray-400">Out{detail.outs !== 1 ? 's' : ''}</span>
-                <span className="flex gap-0.5">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className={`w-2 h-2 rounded-full ${
-                        i < (detail.outs ?? 0) ? 'bg-yellow-400' : 'bg-surface-200'
-                      }`}
-                    />
-                  ))}
-                </span>
-              </div>
+              <span className="text-xs text-gray-500 truncate">{detail.onDeckBatter.name}</span>
             </div>
           )}
         </div>
@@ -530,19 +631,20 @@ function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
           const halfLabel = play.half === 'top' ? 'Top' : 'Bot';
           const colorClass = TICKER_EVENT_COLORS[play.event] ?? 'text-gray-600';
           return (
-            <div key={play.id} className="px-3 py-2 grid" style={{ gridTemplateColumns: '2rem 1fr' }}>
-              <span className="text-[10px] text-gray-400 font-mono tabular-nums">
+            <div key={play.id} className="px-3 py-2 grid items-baseline gap-x-2" style={{ gridTemplateColumns: 'auto 1fr' }}>
+              <span className="text-[10px] text-gray-400 font-mono tabular-nums whitespace-nowrap">
                 {halfLabel} {play.inning}
               </span>
-              <div>
+              <div className="flex items-baseline gap-1.5">
                 <span className={`text-[11px] font-bold ${colorClass}`}>{play.event}</span>
                 {play.rbi > 0 && (
-                  <span className="text-[10px] text-accent font-semibold ml-1.5">{play.rbi} RBI</span>
+                  <span className="text-[10px] text-accent font-semibold">{play.rbi} RBI</span>
                 )}
-                <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
-                  {play.description}
-                </p>
               </div>
+              <div />
+              <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                {play.description}
+              </p>
             </div>
           );
         })}
@@ -751,7 +853,7 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
 
   useEffect(() => {
     if (detail?.status !== 'live' && detail?.status !== 'delayed') return;
-    const timer = setInterval(() => fetchDetail(false), 15_000);
+    const timer = setInterval(() => fetchDetail(false), 5_000);
     return () => clearInterval(timer);
   }, [detail?.status, fetchDetail]);
 

@@ -137,6 +137,18 @@ export interface PlayEvent {
   homeScore: number;
 }
 
+export interface Pitch {
+  pX: number;
+  pZ: number;
+  type: string;
+  typeName: string;
+  call: string;
+  speed: number;
+  isStrike: boolean;
+  isBall: boolean;
+  isInPlay: boolean;
+}
+
 export interface GameDetail extends Game {
   venue?: string;
   lastPlayDescription?: string;
@@ -147,6 +159,9 @@ export interface GameDetail extends Game {
   homeColor?: string;
   awayColor?: string;
   onDeckBatter?: PlayerInfo;
+  currentAtBatPitches?: Pitch[];
+  strikeZoneTop?: number;
+  strikeZoneBottom?: number;
   prevGameHome?: ScheduleNavGame;
   nextGameHome?: ScheduleNavGame;
   prevGameAway?: ScheduleNavGame;
