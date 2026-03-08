@@ -482,14 +482,32 @@ function BoxScoreTab({ detail }: { detail: GameDetail }) {
 // ── Recent plays ticker ────────────────────────────────────────────────
 
 const TICKER_EVENT_COLORS: Record<string, string> = {
-  'Home Run':             'text-yellow-500',
-  'Triple':               'text-accent',
-  'Double':               'text-accent-light',
-  'Single':               'text-gray-700',
-  'Walk':                 'text-blue-500',
-  'Strikeout':            'text-red-400',
-  'Strikeout - Swinging': 'text-red-400',
-  'Strikeout - Looking':  'text-red-400',
+  // On base = blue
+  'Home Run':             'text-blue-600',
+  'Triple':               'text-blue-600',
+  'Double':               'text-blue-600',
+  'Single':               'text-blue-600',
+  'Walk':                 'text-blue-600',
+  'Hit By Pitch':         'text-blue-600',
+  'Intent Walk':          'text-blue-600',
+  // Outs = black
+  'Strikeout':            'text-gray-900',
+  'Strikeout - Swinging': 'text-gray-900',
+  'Strikeout - Looking':  'text-gray-900',
+  'Groundout':            'text-gray-900',
+  'Flyout':               'text-gray-900',
+  'Lineout':              'text-gray-900',
+  'Pop Out':              'text-gray-900',
+  'Forceout':             'text-gray-900',
+  'Grounded Into DP':     'text-gray-900',
+  'Double Play':          'text-gray-900',
+  'Triple Play':          'text-gray-900',
+  'Fielders Choice':      'text-gray-900',
+  'Sac Fly':              'text-gray-900',
+  'Sac Bunt':             'text-gray-900',
+  'Sacrifice Fly':        'text-gray-900',
+  'Sacrifice Bunt':       'text-gray-900',
+  'Field Out':            'text-gray-900',
 };
 
 function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
@@ -519,7 +537,7 @@ function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
                 </span>
                 <span className={`text-[11px] font-bold ${colorClass}`}>{play.event}</span>
                 {play.rbi > 0 && (
-                  <span className="text-[10px] text-yellow-500 font-semibold">{play.rbi} RBI</span>
+                  <span className="text-[10px] text-accent font-semibold">{play.rbi} RBI</span>
                 )}
                 <span className="ml-auto text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0">
                   {(play.awayScore > 0 || play.homeScore > 0) ? `${play.awayScore}–${play.homeScore}` : ''}
@@ -539,14 +557,32 @@ function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
 // ── Play-by-Play tab ───────────────────────────────────────────────────
 
 const EVENT_COLORS: Record<string, string> = {
-  'Home Run':              'text-yellow-500',
-  'Triple':                'text-accent',
-  'Double':                'text-accent-light',
-  'Single':                'text-gray-700',
-  'Walk':                  'text-blue-500',
-  'Strikeout':             'text-red-400',
-  'Strikeout - Swinging':  'text-red-400',
-  'Strikeout - Looking':   'text-red-400',
+  // On base = blue
+  'Home Run':              'text-blue-600',
+  'Triple':                'text-blue-600',
+  'Double':                'text-blue-600',
+  'Single':                'text-blue-600',
+  'Walk':                  'text-blue-600',
+  'Hit By Pitch':          'text-blue-600',
+  'Intent Walk':           'text-blue-600',
+  // Outs = black
+  'Strikeout':             'text-gray-900',
+  'Strikeout - Swinging':  'text-gray-900',
+  'Strikeout - Looking':   'text-gray-900',
+  'Groundout':             'text-gray-900',
+  'Flyout':                'text-gray-900',
+  'Lineout':               'text-gray-900',
+  'Pop Out':               'text-gray-900',
+  'Forceout':              'text-gray-900',
+  'Grounded Into DP':      'text-gray-900',
+  'Double Play':           'text-gray-900',
+  'Triple Play':           'text-gray-900',
+  'Fielders Choice':       'text-gray-900',
+  'Sac Fly':               'text-gray-900',
+  'Sac Bunt':              'text-gray-900',
+  'Sacrifice Fly':         'text-gray-900',
+  'Sacrifice Bunt':        'text-gray-900',
+  'Field Out':             'text-gray-900',
 };
 
 function PlayByPlayTab({ plays }: { plays: PlayEvent[] }) {
@@ -586,7 +622,7 @@ function PlayByPlayTab({ plays }: { plays: PlayEvent[] }) {
                     {play.event}
                   </span>
                   {play.rbi > 0 && (
-                    <span className="ml-1 text-[10px] text-yellow-500 font-semibold">
+                    <span className="ml-1 text-[10px] text-accent font-semibold">
                       {play.rbi} RBI
                     </span>
                   )}
