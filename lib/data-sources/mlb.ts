@@ -337,14 +337,18 @@ function mapStatus(status: MLBGame['status']): GameStatus {
   // Live states
   if (['I', 'MA', 'MB', 'MC'].includes(code)) return 'live';
 
-  // Final states
-  if (['F', 'FT', 'FR', 'FO', 'CR', 'GO'].includes(code)) return 'final';
+  // Final states (O = Game Over, FM = Completed Early / mercy rule)
+  if (['F', 'FT', 'FR', 'FO', 'FM', 'CR', 'GO', 'O'].includes(code)) return 'final';
 
   // Postponed
   if (['PO', 'PI', 'CO'].includes(code)) return 'postponed';
 
   // Delayed
   if (['DI', 'DR', 'DG'].includes(code)) return 'delayed';
+
+  // Fallback: use abstractGameCode for any unrecognized statusCode
+  if (status.abstractGameCode === 'F') return 'final';
+  if (status.abstractGameCode === 'L') return 'live';
 
   // Everything else is scheduled (S, P, PW, etc.)
   return 'scheduled';

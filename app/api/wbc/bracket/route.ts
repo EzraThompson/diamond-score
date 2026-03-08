@@ -67,9 +67,11 @@ function getRoundFromGameType(gameType: string): string | null {
   }
 }
 
-function mapStatus(statusCode: string): 'scheduled' | 'live' | 'final' {
-  if (['F', 'FT', 'FR', 'FO', 'CR', 'GO'].includes(statusCode)) return 'final';
+function mapStatus(statusCode: string, abstractGameCode?: string): 'scheduled' | 'live' | 'final' {
+  if (['F', 'FT', 'FR', 'FO', 'FM', 'CR', 'GO', 'O'].includes(statusCode)) return 'final';
   if (['I', 'MA', 'MB', 'MC'].includes(statusCode)) return 'live';
+  if (abstractGameCode === 'F') return 'final';
+  if (abstractGameCode === 'L') return 'live';
   return 'scheduled';
 }
 
@@ -114,7 +116,7 @@ function buildBracket(games: MLBBracketGame[]): WBCBracketData {
 
     const home = g.teams.home;
     const away = g.teams.away;
-    const status = mapStatus(g.status.statusCode);
+    const status = mapStatus(g.status.statusCode, g.status.abstractGameCode);
 
     const game: BracketGame = {
       id: g.gamePk,
