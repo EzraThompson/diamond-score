@@ -226,13 +226,21 @@ function StatusDisplay({ game }: { game: Game }) {
 function Linescore({ game }: { game: Game }) {
   if (!game.linescore?.length) return null;
 
+  // Pad to at least 9 innings so the grid is always full-width
+  const minInnings = Math.max(9, game.linescore.length);
+  const innings = Array.from({ length: minInnings }, (_, i) => {
+    const num = i + 1;
+    const existing = game.linescore!.find((inn) => inn.inning === num);
+    return existing ?? { inning: num, away: undefined, home: undefined };
+  });
+
   return (
     <div className="overflow-x-auto no-scrollbar mt-2 pt-2 border-t border-surface-200">
       <table className="linescore-table text-[10px] text-gray-400 w-full">
         <thead>
           <tr>
             <th className="text-left font-semibold w-10" />
-            {game.linescore.map((inn) => (
+            {innings.map((inn) => (
               <th key={inn.inning} className="font-semibold text-gray-400">{inn.inning}</th>
             ))}
             <th className="font-semibold pl-2 border-l border-surface-200 text-gray-500">R</th>
@@ -243,7 +251,7 @@ function Linescore({ game }: { game: Game }) {
         <tbody>
           <tr>
             <td className="text-left font-bold text-[10px] text-gray-500">{game.awayTeam.abbreviation}</td>
-            {game.linescore.map((inn) => (
+            {innings.map((inn) => (
               <td key={inn.inning} className="text-gray-500">{inn.away ?? '-'}</td>
             ))}
             <td className="font-bold pl-2 border-l border-surface-200 text-gray-700">{game.awayScore}</td>
@@ -252,7 +260,7 @@ function Linescore({ game }: { game: Game }) {
           </tr>
           <tr>
             <td className="text-left font-bold text-[10px] text-gray-500">{game.homeTeam.abbreviation}</td>
-            {game.linescore.map((inn) => (
+            {innings.map((inn) => (
               <td key={inn.inning} className="text-gray-500">{inn.home ?? '-'}</td>
             ))}
             <td className="font-bold pl-2 border-l border-surface-200 text-gray-700">{game.homeScore}</td>
@@ -330,14 +338,6 @@ function CardContent({
             <ClutchBadge leverage={leverage} style={clutchStyle} />
           )}
         </div>
-        {isLive && game.count && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-400 tabular-nums font-mono">
-              {game.count.balls}-{game.count.strikes}
-            </span>
-            <Outs count={game.count.outs} />
-          </div>
-        )}
       </div>
 
       {/* Teams & scores */}
@@ -413,9 +413,15 @@ function CardContent({
           </div>
         </div>
 
-        {/* Live: diamond */}
+        {/* Live: diamond + count/outs */}
         {isLive && game.count && game.runnersOn && (
           <div className="flex flex-col items-center gap-0.5 flex-shrink-0 w-[68px] pl-1.5 border-l border-surface-200">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-gray-400 tabular-nums font-mono">
+                {game.count.balls}-{game.count.strikes}
+              </span>
+              <Outs count={game.count.outs} />
+            </div>
             <Diamond runners={game.runnersOn} size={28} />
             {(game.currentBatter || game.currentPitcher) && (
               <div className="flex flex-col items-center text-[8px] text-gray-400 leading-tight w-full">
