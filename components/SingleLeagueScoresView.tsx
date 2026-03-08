@@ -136,7 +136,7 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
+      <div className="pt-2 pb-4">
         {!loading && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
             <span className="text-3xl">&#9918;</span>

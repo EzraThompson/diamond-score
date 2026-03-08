@@ -91,7 +91,7 @@ export default function ScheduleView() {
   const totalGames = filteredLeagues.reduce((s, l) => s + l.games.length, 0);
 
   return (
-    <div className="flex flex-col min-h-0 overflow-hidden">
+    <div className="flex flex-col min-h-0">
       <Header date={selectedDate} onDateChange={() => handleTodayClick()} />
 
       {/* Calendar */}
@@ -151,7 +151,7 @@ export default function ScheduleView() {
       </div>
 
       {/* Game list */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="pb-4">
         {loading && (
           <div className="flex items-center justify-center py-12">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />

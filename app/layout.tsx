@@ -128,8 +128,8 @@ export default function RootLayout({
             <ToastProvider>
               <ThemeApplier />
               <Onboarding />
-              <div className="h-screen flex flex-col max-w-lg md:max-w-3xl mx-auto overflow-hidden">
-                <main className="flex-1 flex flex-col pb-16 overflow-hidden">
+              <div className="flex flex-col max-w-lg md:max-w-3xl mx-auto min-h-screen">
+                <main className="flex-1 flex flex-col pb-16">
                   {children}
                 </main>
                 <BottomNav />

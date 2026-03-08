@@ -880,11 +880,11 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
   const hasPlays = (detail.plays?.length ?? 0) > 0;
 
   return (
-    <div className="flex flex-col min-h-0 overflow-hidden">
+    <div className="flex flex-col min-h-0">
       <GameHeader detail={detail} onBack={() => router.back()} />
       <TabBar active={tab} onChange={setTab} showPbp={hasPlays} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div>
         {tab === 'linescore' && <LinescoreTab detail={detail} />}
         {tab === 'boxscore' && <BoxScoreTab detail={detail} />}
         {tab === 'pbp' && <PlayByPlayTab plays={detail.plays ?? []} />}

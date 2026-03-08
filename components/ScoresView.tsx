@@ -155,7 +155,7 @@ export default function ScoresView() {
     function onTouchStart(e: TouchEvent) {
       // Only allow pull-to-refresh when already scrolled to the very top
       // and user starts a fresh downward drag (not mid-scroll momentum)
-      if (el!.scrollTop <= 0) {
+      if (window.scrollY <= 0) {
         startY = e.touches[0].clientY;
         canPull = true;
         didPull = false;
@@ -166,9 +166,9 @@ export default function ScoresView() {
 
     function onTouchMove(e: TouchEvent) {
       if (!canPull) return;
-      // If the container scrolled away from top during this gesture,
+      // If the page scrolled away from top during this gesture,
       // the user is scrolling up — cancel pull-to-refresh
-      if (el!.scrollTop > 0) {
+      if (window.scrollY > 0) {
         canPull = false;
         return;
       }
@@ -226,7 +226,7 @@ export default function ScoresView() {
       )}
 
       {/* Content */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}>
+      <div ref={containerRef} className="pt-2 pb-4">
         {/* No games today (all loaded, nothing scheduled) */}
         {allLoaded && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
