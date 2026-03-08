@@ -210,6 +210,11 @@ interface MLBFullLiveFeed {
         away: MLBBoxscoreTeam;
       };
     };
+    decisions?: {
+      winner?: { id: number; fullName: string };
+      loser?: { id: number; fullName: string };
+      save?: { id: number; fullName: string };
+    };
   };
 }
 
@@ -681,6 +686,14 @@ export async function fetchGameDetailFromLiveFeed(
     away: parsePitchers(bsTeams.away),
   };
   detail.plays = parsePlays(liveData.plays.allPlays);
+
+  // W/L/S decisions for final games
+  const decisions = liveData.decisions;
+  if (decisions) {
+    if (decisions.winner) detail.winningPitcher = toPlayer(decisions.winner);
+    if (decisions.loser) detail.losingPitcher = toPlayer(decisions.loser);
+    if (decisions.save) detail.savePitcher = toPlayer(decisions.save);
+  }
 
   return detail;
 }

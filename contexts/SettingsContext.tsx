@@ -3,16 +3,23 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { storageGet, storageSet } from '@/lib/storage';
 
+export type ClutchStyle = 'subtle' | 'bold' | 'dramatic';
+export type ScoreAnimation = 'slide' | 'pop' | 'flip';
+
 export interface AppSettings {
   hiddenLeagues: number[];
   spoilerMode: boolean;
   theme: 'light' | 'dark';
+  clutchStyle: ClutchStyle;
+  scoreAnimation: ScoreAnimation;
 }
 
 const DEFAULTS: AppSettings = {
   hiddenLeagues: [],
   spoilerMode: false,
   theme: 'light',
+  clutchStyle: 'dramatic',
+  scoreAnimation: 'flip',
 };
 
 interface SettingsContextValue {

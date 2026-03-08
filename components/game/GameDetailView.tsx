@@ -232,7 +232,11 @@ function LinescoreTab({ detail }: { detail: GameDetail }) {
         <LiveSituation detail={detail} />
       )}
 
-      {detail.status === 'live' && (detail.plays?.length ?? 0) > 0 && (
+      {detail.status === 'final' && (detail.winningPitcher || detail.losingPitcher) && (
+        <GameDecisions detail={detail} />
+      )}
+
+      {(detail.plays?.length ?? 0) > 0 && (
         <RecentPlaysTicker plays={detail.plays!} />
       )}
     </div>
@@ -304,6 +308,38 @@ function LiveSituation({ detail }: { detail: GameDetail }) {
           {detail.lastPlayDescription}
         </p>
       )}
+    </div>
+  );
+}
+
+// ── Game decisions (W/L/S for final games) ────────────────────────────
+
+function GameDecisions({ detail }: { detail: GameDetail }) {
+  return (
+    <div className="mt-3 bg-surface-50 rounded-xl p-3 border border-surface-200">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+        Pitching Decisions
+      </p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        {detail.winningPitcher && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-accent w-3">W</span>
+            <span className="text-xs text-gray-600">{detail.winningPitcher.name}</span>
+          </div>
+        )}
+        {detail.losingPitcher && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-red-400 w-3">L</span>
+            <span className="text-xs text-gray-600">{detail.losingPitcher.name}</span>
+          </div>
+        )}
+        {detail.savePitcher && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-blue-500 w-3">S</span>
+            <span className="text-xs text-gray-600">{detail.savePitcher.name}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

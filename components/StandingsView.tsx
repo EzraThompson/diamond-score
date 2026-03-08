@@ -108,7 +108,7 @@ function DivisionTable({
           <thead>
             <tr className="text-[10px] text-gray-400 uppercase border-b border-surface-200 bg-surface-100">
               <th className="text-left py-2 px-3 font-semibold w-6">#</th>
-              <th className="text-left py-2 px-1 font-semibold">Team</th>
+              <th className="text-left py-2 px-1 font-semibold w-[4.5rem]">Team</th>
               <th className="text-center py-2 px-2 font-semibold">W</th>
               <th className="text-center py-2 px-2 font-semibold">L</th>
               <th className="text-center py-2 px-2 font-semibold">PCT</th>
@@ -337,7 +337,7 @@ function NCAATab({
           <thead>
             <tr className="text-[10px] text-gray-400 uppercase border-b border-surface-200 bg-surface-100">
               <th className="text-left py-2 px-3 font-semibold w-6">#</th>
-              <th className="text-left py-2 px-1 font-semibold">Team</th>
+              <th className="text-left py-2 px-1 font-semibold w-[4.5rem]">Team</th>
               <th className="text-left py-2 px-2 font-semibold hidden sm:table-cell">Conf</th>
               <th className="text-center py-2 px-2 font-semibold">W</th>
               <th className="text-center py-2 px-2 font-semibold">L</th>

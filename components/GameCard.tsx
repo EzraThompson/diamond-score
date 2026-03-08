@@ -4,47 +4,55 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import type { Game } from '@/lib/types';
+import type { ClutchStyle, ScoreAnimation } from '@/contexts/SettingsContext';
+import { calculateLeverageIndex, type LeverageResult } from '@/lib/leverageIndex';
 import Diamond from './Diamond';
 import TeamBadge from './TeamBadge';
 import StarButton from './StarButton';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
-// ── Count-up animation ────────────────────────────────────────────────
+// ── Score transition hook (replaces useCountUp) ──────────────────────
 
-function useCountUp(score: number): number {
+type TransitionPhase = 'idle' | 'exit' | 'enter';
+
+interface ScoreTransitionState {
+  displayed: number;
+  previous: number | null;
+  phase: TransitionPhase;
+}
+
+function useScoreTransition(score: number, duration = 400): ScoreTransitionState {
   const prevRef = useRef(score);
-  const [displayed, setDisplayed] = useState(score);
-  const rafRef = useRef<number | undefined>(undefined);
+  const [state, setState] = useState<ScoreTransitionState>({
+    displayed: score,
+    previous: null,
+    phase: 'idle',
+  });
 
   useEffect(() => {
     const from = prevRef.current;
     const to = score;
     prevRef.current = score;
-
     if (from === to) return;
 
-    const diff = to - from;
-    const duration = Math.min(Math.abs(diff) * 150, 600);
-    const startTime = performance.now();
+    setState({ displayed: to, previous: from, phase: 'exit' });
 
-    function tick(now: number) {
-      const elapsed = now - startTime;
-      const t = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplayed(Math.round(from + diff * eased));
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    }
+    const enterTimer = setTimeout(() => {
+      setState({ displayed: to, previous: from, phase: 'enter' });
+    }, duration / 2);
 
-    rafRef.current = requestAnimationFrame(tick);
+    const idleTimer = setTimeout(() => {
+      setState({ displayed: to, previous: null, phase: 'idle' });
+    }, duration);
+
     return () => {
-      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+      clearTimeout(enterTimer);
+      clearTimeout(idleTimer);
     };
-  }, [score]);
+  }, [score, duration]);
 
-  return displayed;
+  return state;
 }
 
 // ── Score-flash: green highlight on change ───────────────────────────
@@ -63,6 +71,99 @@ function useScoreFlash(score: number): boolean {
   }, [score]);
 
   return flashing;
+}
+
+// ── ScoreDisplay component ───────────────────────────────────────────
+
+function ScoreDisplay({
+  score,
+  className,
+  animation,
+}: {
+  score: number;
+  className: string;
+  animation: ScoreAnimation;
+}) {
+  const { displayed, previous, phase } = useScoreTransition(
+    score,
+    animation === 'pop' ? 450 : 400,
+  );
+  const flashing = useScoreFlash(score);
+
+  const flashClass = flashing ? 'animate-score-flash text-accent' : '';
+
+  if (animation === 'slide') {
+    return (
+      <span className={`relative overflow-hidden inline-flex items-center justify-end ${className} ${flashClass}`}>
+        {phase === 'exit' && previous !== null && (
+          <span className="absolute inset-0 flex items-center justify-end animate-score-slide-out">
+            {previous}
+          </span>
+        )}
+        <span className={
+          phase === 'enter' ? 'animate-score-slide-in' : phase === 'exit' ? 'opacity-0' : ''
+        }>
+          {displayed}
+        </span>
+      </span>
+    );
+  }
+
+  if (animation === 'pop') {
+    return (
+      <span className={`inline-flex items-center justify-end ${className} ${flashClass}`}>
+        {phase === 'exit' && previous !== null ? (
+          <span className="inline-block animate-score-shrink-out">{previous}</span>
+        ) : phase === 'enter' ? (
+          <span className="inline-block animate-score-pop-in text-accent">{displayed}</span>
+        ) : (
+          displayed
+        )}
+      </span>
+    );
+  }
+
+  // flip
+  return (
+    <span className={`inline-flex items-center justify-end ${className} ${flashClass}`} style={{ transformStyle: 'preserve-3d' }}>
+      {phase === 'exit' && previous !== null ? (
+        <span className="inline-block animate-score-flip-out origin-bottom">{previous}</span>
+      ) : phase === 'enter' ? (
+        <span className="inline-block animate-score-flip-in origin-top text-accent">{displayed}</span>
+      ) : (
+        displayed
+      )}
+    </span>
+  );
+}
+
+// ── Clutch badge ─────────────────────────────────────────────────────
+
+function ClutchBadge({ leverage, style }: { leverage: LeverageResult; style: ClutchStyle }) {
+  if (!leverage.isClutch) return null;
+
+  if (style === 'subtle') {
+    return (
+      <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full tabular-nums">
+        Clutch
+      </span>
+    );
+  }
+
+  if (style === 'bold') {
+    return (
+      <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+        leverage.intensity === 'extreme'
+          ? 'text-red-700 bg-red-100 animate-pulse'
+          : 'text-amber-700 bg-amber-100'
+      }`}>
+        {leverage.intensity === 'extreme' ? 'Clutch!' : 'Clutch'}
+      </span>
+    );
+  }
+
+  // dramatic — badge is inside the banner, not inline
+  return null;
 }
 
 // ── Outs indicator ────────────────────────────────────────────────────
@@ -164,60 +265,75 @@ function Linescore({ game }: { game: Game }) {
   );
 }
 
-// ── Main card ─────────────────────────────────────────────────────────
+// ── Card content (shared between clutch wrappers) ─────────────────────
 
-export default function GameCard({ game }: { game: Game }) {
-  const router = useRouter();
-  const [expanded, setExpanded] = useState(false);
-  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+function CardContent({
+  game,
+  leverage,
+  clutchStyle,
+  scoreAnimation,
+  isLive,
+  isFinal,
+  isScheduled,
+  homeWon,
+  awayWon,
+  spoilerActive,
+  spoilerRevealed,
+  setSpoilerRevealed,
+  expanded,
+  setExpanded,
+  router,
+}: {
+  game: Game;
+  leverage: LeverageResult;
+  clutchStyle: ClutchStyle;
+  scoreAnimation: ScoreAnimation;
+  isLive: boolean;
+  isFinal: boolean;
+  isScheduled: boolean;
+  homeWon: boolean;
+  awayWon: boolean;
+  spoilerActive: boolean;
+  spoilerRevealed: boolean;
+  setSpoilerRevealed: (v: boolean) => void;
+  expanded: boolean;
+  setExpanded: (fn: (v: boolean) => boolean) => void;
+  router: ReturnType<typeof useRouter>;
+}) {
   const { isTeamFav, toggleTeam } = useFavorites();
-  const { settings } = useSettings();
-
-  const isLive = game.status === 'live';
-  const isFinal = game.status === 'final';
-  const isScheduled = game.status === 'scheduled';
-  const homeWon = isFinal && game.homeScore > game.awayScore;
-  const awayWon = isFinal && game.awayScore > game.homeScore;
-
-  const spoilerActive = settings.spoilerMode && isFinal && !spoilerRevealed;
-
-  const homeDisplayed = useCountUp(game.homeScore);
-  const awayDisplayed = useCountUp(game.awayScore);
-  const homeFlashing = useScoreFlash(game.homeScore);
-  const awayFlashing = useScoreFlash(game.awayScore);
 
   function handleClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement;
-
-    if (target.closest('[data-expand]')) {
-      setExpanded((v) => !v);
-      return;
-    }
-
-    if (target.closest('[data-star]')) {
-      return; // handled by StarButton
-    }
-
-    if (target.closest('[data-spoiler]')) {
-      setSpoilerRevealed(true);
-      return;
-    }
-
+    if (target.closest('[data-expand]')) { setExpanded((v) => !v); return; }
+    if (target.closest('[data-star]')) return;
+    if (target.closest('[data-spoiler]')) { setSpoilerRevealed(true); return; }
     router.push(`/game/${game.id}?league=${game.league.id}`);
   }
 
+  // Score classes (shared base)
+  const scoreBase = 'ml-1 w-8 text-right text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors';
+  const awayScoreColor = awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400';
+  const homeScoreColor = homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400';
+
   return (
-    <div
-      onClick={handleClick}
-      className={`bg-surface-50 rounded-xl px-4 pt-3 pb-2 border transition-colors cursor-pointer ${
-        isLive
-          ? 'border-live/30 shadow-sm shadow-live/10'
-          : 'border-surface-200 hover:border-surface-300 hover:bg-surface-100'
-      }`}
-    >
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div onClick={handleClick}>
       {/* Status row */}
       <div className="flex items-center justify-between mb-2">
-        <StatusDisplay game={game} />
+        <div className="flex items-center gap-2">
+          <StatusDisplay game={game} />
+          {clutchStyle === 'dramatic' && leverage.isClutch && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+              style={{ background: '#fff8ec', border: '1px solid #f0d080', color: '#b07d10' }}
+            >
+              Big Moment
+            </span>
+          )}
+          {(clutchStyle === 'subtle' || clutchStyle === 'bold') && (
+            <ClutchBadge leverage={leverage} style={clutchStyle} />
+          )}
+        </div>
         {isLive && game.count && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400 tabular-nums font-mono">
@@ -242,7 +358,7 @@ export default function GameCard({ game }: { game: Game }) {
                   #{game.awayTeam.rank}
                 </span>
               )}
-              {game.awayTeam.abbreviation}
+              <span className="inline-block w-10">{game.awayTeam.abbreviation}</span>
               {game.awayTeam.wins !== undefined && (
                 <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
                   {game.awayTeam.wins}-{game.awayTeam.losses}
@@ -252,26 +368,18 @@ export default function GameCard({ game }: { game: Game }) {
             <div data-star className="flex items-center">
               <StarButton
                 active={isTeamFav(game.awayTeam.abbreviation)}
-                onToggle={(e) => {
-                  e.stopPropagation();
-                  toggleTeam(game.awayTeam.abbreviation);
-                }}
+                onToggle={(e) => { e.stopPropagation(); toggleTeam(game.awayTeam.abbreviation); }}
               />
             </div>
-            <span
-              data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 w-8 text-right text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
-                awayWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
-              } ${awayFlashing ? 'animate-score-flash text-accent' : ''} ${
-                spoilerActive ? 'cursor-pointer select-none' : ''
-              }`}
-            >
-              {isScheduled
-                ? ''
-                : spoilerActive
-                ? <span className="tracking-widest text-gray-300">•••</span>
-                : awayDisplayed}
-            </span>
+            {isScheduled ? (
+              <span className={`${scoreBase} text-gray-300`} />
+            ) : spoilerActive ? (
+              <span data-spoiler="true" className={`${scoreBase} ${awayScoreColor} cursor-pointer select-none`}>
+                <span className="tracking-widest text-gray-300">•••</span>
+              </span>
+            ) : (
+              <ScoreDisplay score={game.awayScore} className={`${scoreBase} ${awayScoreColor}`} animation={scoreAnimation} />
+            )}
           </div>
           {/* Home */}
           <div className="flex items-center gap-2">
@@ -284,7 +392,7 @@ export default function GameCard({ game }: { game: Game }) {
                   #{game.homeTeam.rank}
                 </span>
               )}
-              {game.homeTeam.abbreviation}
+              <span className="inline-block w-10">{game.homeTeam.abbreviation}</span>
               {game.homeTeam.wins !== undefined && (
                 <span className="text-[10px] font-medium text-gray-400 ml-1 tabular-nums">
                   {game.homeTeam.wins}-{game.homeTeam.losses}
@@ -294,30 +402,22 @@ export default function GameCard({ game }: { game: Game }) {
             <div data-star className="flex items-center">
               <StarButton
                 active={isTeamFav(game.homeTeam.abbreviation)}
-                onToggle={(e) => {
-                  e.stopPropagation();
-                  toggleTeam(game.homeTeam.abbreviation);
-                }}
+                onToggle={(e) => { e.stopPropagation(); toggleTeam(game.homeTeam.abbreviation); }}
               />
             </div>
-            <span
-              data-spoiler={spoilerActive ? 'true' : undefined}
-              className={`ml-1 w-8 text-right text-xl font-bold tabular-nums font-mono rounded px-0.5 transition-colors ${
-                homeWon ? 'text-gray-900' : isScheduled ? 'text-gray-300' : isLive ? 'text-gray-600' : 'text-gray-400'
-              } ${homeFlashing ? 'animate-score-flash text-accent' : ''} ${
-                spoilerActive ? 'cursor-pointer select-none' : ''
-              }`}
-            >
-              {isScheduled
-                ? ''
-                : spoilerActive
-                ? <span className="tracking-widest text-gray-300">•••</span>
-                : homeDisplayed}
-            </span>
+            {isScheduled ? (
+              <span className={`${scoreBase} text-gray-300`} />
+            ) : spoilerActive ? (
+              <span data-spoiler="true" className={`${scoreBase} ${homeScoreColor} cursor-pointer select-none`}>
+                <span className="tracking-widest text-gray-300">•••</span>
+              </span>
+            ) : (
+              <ScoreDisplay score={game.homeScore} className={`${scoreBase} ${homeScoreColor}`} animation={scoreAnimation} />
+            )}
           </div>
         </div>
 
-        {/* Live: diamond — only shown for leagues that provide count/runner data */}
+        {/* Live: diamond */}
         {isLive && game.count && game.runnersOn && (
           <div className="flex flex-col items-center gap-0.5 flex-shrink-0 w-[68px] pl-1.5 border-l border-surface-200">
             <Diamond runners={game.runnersOn} size={28} />
@@ -344,10 +444,7 @@ export default function GameCard({ game }: { game: Game }) {
 
       {/* Spoiler tap hint */}
       {spoilerActive && (
-        <p
-          data-spoiler
-          className="text-[10px] text-gray-400 text-center mt-2 select-none cursor-pointer"
-        >
+        <p data-spoiler className="text-[10px] text-gray-400 text-center mt-2 select-none cursor-pointer">
           Tap score to reveal
         </p>
       )}
@@ -371,6 +468,82 @@ export default function GameCard({ game }: { game: Game }) {
           </svg>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Main card ─────────────────────────────────────────────────────────
+
+export default function GameCard({ game }: { game: Game }) {
+  const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const { settings } = useSettings();
+
+  const isLive = game.status === 'live';
+  const isFinal = game.status === 'final';
+  const isScheduled = game.status === 'scheduled';
+  const homeWon = isFinal && game.homeScore > game.awayScore;
+  const awayWon = isFinal && game.awayScore > game.homeScore;
+  const spoilerActive = settings.spoilerMode && isFinal && !spoilerRevealed;
+
+  const leverage = calculateLeverageIndex(game);
+  const clutchStyle = settings.clutchStyle ?? 'bold';
+  const scoreAnimation = settings.scoreAnimation ?? 'slide';
+
+  const contentProps = {
+    game, leverage, clutchStyle, scoreAnimation,
+    isLive, isFinal, isScheduled, homeWon, awayWon,
+    spoilerActive, spoilerRevealed, setSpoilerRevealed,
+    expanded, setExpanded, router,
+  };
+
+  // ── Clutch card wrappers ──
+
+  // Dramatic: animated gradient border wrapper
+  if (clutchStyle === 'dramatic' && leverage.isClutch) {
+    return (
+      <div
+        className="rounded-xl cursor-pointer px-4 pt-3 pb-2 bg-surface-50"
+        style={{
+          border: '1.5px solid #f0dfa0',
+          boxShadow: '0 0 0 4px rgba(245,166,35,0.08)',
+        }}
+      >
+        <CardContent {...contentProps} />
+      </div>
+    );
+  }
+
+  // Bold: pulsing glow + tinted background
+  if (clutchStyle === 'bold' && leverage.isClutch) {
+    const cls = leverage.intensity === 'extreme'
+      ? 'border-red-400/60 animate-clutch-pulse-intense bg-amber-50/30'
+      : 'border-amber-400/50 animate-clutch-pulse bg-amber-50/20';
+    return (
+      <div className={`bg-surface-50 rounded-xl px-4 pt-3 pb-2 border transition-colors cursor-pointer ${cls}`}>
+        <CardContent {...contentProps} />
+      </div>
+    );
+  }
+
+  // Subtle: amber border only
+  if (clutchStyle === 'subtle' && leverage.isClutch) {
+    return (
+      <div className="bg-surface-50 rounded-xl px-4 pt-3 pb-2 border border-amber-400/50 shadow-sm shadow-amber-400/15 transition-colors cursor-pointer">
+        <CardContent {...contentProps} />
+      </div>
+    );
+  }
+
+  // Default (non-clutch or non-live)
+  return (
+    <div className={`bg-surface-50 rounded-xl px-4 pt-3 pb-2 border transition-colors cursor-pointer ${
+      isLive
+        ? 'border-live/30 shadow-sm shadow-live/10'
+        : 'border-surface-200 hover:border-surface-300 hover:bg-surface-100'
+    }`}>
+      <CardContent {...contentProps} />
     </div>
   );
 }

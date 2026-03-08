@@ -542,8 +542,8 @@ export async function getNCAAGames(date: string): Promise<Game[]> {
     // at least one is explicitly present, otherwise we'd show fake zeros.
     if (isLive && comp.situation) {
       const sit = comp.situation;
-      game.runnersOn = parseRunners(sit);
       if (sit.outs !== undefined || sit.balls !== undefined || sit.strikes !== undefined) {
+        game.runnersOn = parseRunners(sit);
         const outs = sit.outs ?? 0;
         game.outs = outs;
         game.count = {
@@ -680,8 +680,8 @@ export async function getNCAAGameDetail(id: number): Promise<GameDetail> {
     // Priority 1: situation block from the summary endpoint (rarely populated)
     if (headerComp.situation) {
       const sit = headerComp.situation;
-      detail.runnersOn = parseRunners(sit);
       if (sit.outs !== undefined || sit.balls !== undefined || sit.strikes !== undefined) {
+        detail.runnersOn = parseRunners(sit);
         const outs = sit.outs ?? 0;
         detail.outs = outs;
         detail.count = { balls: sit.balls ?? 0, strikes: sit.strikes ?? 0, outs };
