@@ -120,7 +120,8 @@ function flattenGroups(groups: ESPNGroup[]): WBCPoolGroup[] {
 export async function GET() {
   const cacheKey = 'standings:wbc';
   const cached = standingsCache.get<WBCStandingsData>(cacheKey);
-  if (cached) return NextResponse.json(cached);
+  const cacheHeaders = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
+  if (cached) return NextResponse.json(cached, { headers: cacheHeaders });
 
   try {
     const res = await fetch(
@@ -139,7 +140,7 @@ export async function GET() {
     const result: WBCStandingsData = { pools };
     standingsCache.set(cacheKey, result, 300); // 5 min
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: cacheHeaders });
   } catch {
     return NextResponse.json({ pools: [] });
   }

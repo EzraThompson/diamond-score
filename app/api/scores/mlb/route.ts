@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
       ? [{ id: 1, name: 'MLB', country: 'USA', logoUrl: '/logos/mlb.svg',
            games, defaultCollapsed: true, showTop25Filter: false }]
       : [];
-    return NextResponse.json({ leagues, hasLive: games.some((g) => g.status === 'live') });
+    const hasLive = games.some((g) => g.status === 'live');
+    const cc = hasLive ? 'public, s-maxage=5, stale-while-revalidate=10' : 'public, s-maxage=30, stale-while-revalidate=60';
+    return NextResponse.json({ leagues, hasLive }, { headers: { 'Cache-Control': cc } });
   } catch {
     const errorLeague: LeagueGroup = {
       id: 1, name: 'MLB', country: 'USA', logoUrl: '/logos/mlb.svg',

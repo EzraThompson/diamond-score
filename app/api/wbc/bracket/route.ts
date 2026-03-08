@@ -185,7 +185,8 @@ function buildBracket(games: MLBBracketGame[]): WBCBracketData {
 export async function GET() {
   const cacheKey = 'wbc:bracket';
   const cached = gameCache.get<WBCBracketData>(cacheKey);
-  if (cached) return NextResponse.json(cached);
+  const cacheHeaders = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
+  if (cached) return NextResponse.json(cached, { headers: cacheHeaders });
 
   try {
     // Fetch WBC schedule for the full tournament window (March 2026)
@@ -210,7 +211,7 @@ export async function GET() {
     const bracket = buildBracket(allGames);
 
     gameCache.set(cacheKey, bracket, 300); // 5-min cache
-    return NextResponse.json(bracket);
+    return NextResponse.json(bracket, { headers: cacheHeaders });
   } catch {
     return NextResponse.json({ quarterfinals: [], semifinals: [], championship: [] });
   }

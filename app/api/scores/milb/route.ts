@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
         id: level.sportId, name: level.label, country: 'USA',
         games, defaultCollapsed: true, showTop25Filter: false,
       }));
-    return NextResponse.json({ leagues, hasLive: leagues.some((l) => l.games.some((g) => g.status === 'live')) });
+    const hasLive = leagues.some((l) => l.games.some((g) => g.status === 'live'));
+    const cc = hasLive ? 'public, s-maxage=5, stale-while-revalidate=10' : 'public, s-maxage=30, stale-while-revalidate=60';
+    return NextResponse.json({ leagues, hasLive }, { headers: { 'Cache-Control': cc } });
   } catch {
     return NextResponse.json({ leagues: [], hasLive: false });
   }

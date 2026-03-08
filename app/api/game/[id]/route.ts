@@ -46,7 +46,10 @@ export async function GET(
       detail = await getMLBGameDetail(gamePk);
     }
 
-    return NextResponse.json(detail);
+    const cc = detail.status === 'live'
+      ? 'public, s-maxage=5, stale-while-revalidate=10'
+      : 'public, s-maxage=30, stale-while-revalidate=60';
+    return NextResponse.json(detail, { headers: { 'Cache-Control': cc } });
   } catch (err) {
     console.error('Game detail API error:', err);
     return NextResponse.json(

@@ -50,7 +50,8 @@ export const revalidate = 3600; // 1 hour — rankings update weekly
 export async function GET() {
   const cacheKey = 'ncaa:rankings';
   const cached = gameCache.get<NCAARankingsData>(cacheKey);
-  if (cached) return NextResponse.json(cached);
+  const cacheHeaders = { 'Cache-Control': 'public, s-maxage=3600' };
+  if (cached) return NextResponse.json(cached, { headers: cacheHeaders });
 
   try {
     const res = await fetch(
@@ -81,7 +82,7 @@ export async function GET() {
 
     const result: NCAARankingsData = { pollName: poll.name, teams };
     gameCache.set(cacheKey, result, 3600); // 1 hour — rankings update weekly
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: cacheHeaders });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'Failed' },

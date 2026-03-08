@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
       if (name) divisions.push({ name, rows });
     }
 
-    return NextResponse.json({ season, level: level.label, sportId, divisions });
+    return NextResponse.json({ season, level: level.label, sportId, divisions }, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+    });
   } catch (err) {
     console.error('MiLB standings error:', err);
     return NextResponse.json(

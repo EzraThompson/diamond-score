@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = `game-days:${month}`;
   const cached = scheduleCache.get<string[]>(cacheKey);
-  if (cached) return NextResponse.json({ dates: cached });
+  const cacheHeaders = { 'Cache-Control': 'public, s-maxage=3600' };
+  if (cached) return NextResponse.json({ dates: cached }, { headers: cacheHeaders });
 
   const [yearStr, monStr] = month.split('-');
   const year = parseInt(yearStr);
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     const dates: string[] = (data.dates ?? []).map((d) => d.date);
 
     scheduleCache.set(cacheKey, dates, 3600); // 1 hour
-    return NextResponse.json({ dates });
+    return NextResponse.json({ dates }, { headers: cacheHeaders });
   } catch {
     return NextResponse.json({ dates: [] });
   }
