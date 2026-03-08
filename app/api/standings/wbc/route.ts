@@ -84,8 +84,8 @@ function parseEntry(entry: ESPNEntry): Standing {
     gamesBack: gb,
     streak: '',
     last10: '',
-    runsScored: rs > 0 ? rs : undefined,
-    runsAllowed: ra > 0 ? ra : undefined,
+    runsScored: (rs > 0 || ra > 0) ? rs : undefined,
+    runsAllowed: (rs > 0 || ra > 0) ? ra : undefined,
   };
 }
 

@@ -14,6 +14,9 @@ function snapshotGame(g: Game): GameSnapshot {
     currentInning: g.currentInning,
     inningHalf: g.inningHalf,
     outs: g.count?.outs,
+    balls: g.count?.balls,
+    strikes: g.count?.strikes,
+    batter: g.currentBatter?.id,
   });
 }
 

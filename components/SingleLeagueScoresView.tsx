@@ -163,7 +163,7 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
                 abbr={league.abbr}
                 logoUrl={league.logoUrl}
                 games={league.games}
-                defaultCollapsed={league.defaultCollapsed}
+                defaultCollapsed={false}
                 showTop25Filter={league.showTop25Filter}
                 error={league.error}
                 stale={league.stale}

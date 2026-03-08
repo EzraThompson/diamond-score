@@ -80,7 +80,7 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
         <div className="flex flex-col items-center gap-1.5 flex-1">
           <TeamBadge abbreviation={detail.awayTeam.abbreviation} primaryColor={detail.awayColor} logoUrl={detail.awayTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
           <span className="text-sm font-bold text-gray-500">{detail.awayTeam.abbreviation}</span>
-          <span className="text-3xl font-black tabular-nums font-mono text-gray-900">{detail.awayScore}</span>
+          <span className="text-3xl font-black tabular-nums font-sans text-gray-900">{detail.awayScore}</span>
         </div>
 
         {/* Status */}
@@ -115,7 +115,7 @@ function GameHeader({ detail, onBack }: { detail: GameDetail; onBack: () => void
         <div className="flex flex-col items-center gap-1.5 flex-1">
           <TeamBadge abbreviation={detail.homeTeam.abbreviation} primaryColor={detail.homeColor} logoUrl={detail.homeTeam.logoUrl} showLogo={detail.league.id === 20} size="lg" />
           <span className="text-sm font-bold text-gray-500">{detail.homeTeam.abbreviation}</span>
-          <span className="text-3xl font-black tabular-nums font-mono text-gray-900">{detail.homeScore}</span>
+          <span className="text-3xl font-black tabular-nums font-sans text-gray-900">{detail.homeScore}</span>
         </div>
       </div>
     </div>
@@ -530,22 +530,19 @@ function RecentPlaysTicker({ plays }: { plays: PlayEvent[] }) {
           const halfLabel = play.half === 'top' ? 'Top' : 'Bot';
           const colorClass = TICKER_EVENT_COLORS[play.event] ?? 'text-gray-600';
           return (
-            <div key={play.id} className="px-3 py-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0 w-8">
-                  {halfLabel} {play.inning}
-                </span>
+            <div key={play.id} className="px-3 py-2 grid" style={{ gridTemplateColumns: '2rem 1fr' }}>
+              <span className="text-[10px] text-gray-400 font-mono tabular-nums">
+                {halfLabel} {play.inning}
+              </span>
+              <div>
                 <span className={`text-[11px] font-bold ${colorClass}`}>{play.event}</span>
                 {play.rbi > 0 && (
-                  <span className="text-[10px] text-accent font-semibold">{play.rbi} RBI</span>
+                  <span className="text-[10px] text-accent font-semibold ml-1.5">{play.rbi} RBI</span>
                 )}
-                <span className="ml-auto text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0">
-                  {(play.awayScore > 0 || play.homeScore > 0) ? `${play.awayScore}–${play.homeScore}` : ''}
-                </span>
+                <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                  {play.description}
+                </p>
               </div>
-              <p className="text-[10px] text-gray-400 leading-tight mt-0.5 pl-10">
-                {play.description}
-              </p>
             </div>
           );
         })}
@@ -753,8 +750,8 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
   useEffect(() => { fetchDetail(true); }, [fetchDetail]);
 
   useEffect(() => {
-    if (detail?.status !== 'live') return;
-    const timer = setInterval(() => fetchDetail(false), 30_000);
+    if (detail?.status !== 'live' && detail?.status !== 'delayed') return;
+    const timer = setInterval(() => fetchDetail(false), 15_000);
     return () => clearInterval(timer);
   }, [detail?.status, fetchDetail]);
 

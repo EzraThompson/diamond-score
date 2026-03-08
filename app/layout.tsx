@@ -128,7 +128,7 @@ export default function RootLayout({
             <ToastProvider>
               <ThemeApplier />
               <Onboarding />
-              <div className="min-h-screen flex flex-col max-w-lg mx-auto">
+              <div className="h-screen flex flex-col max-w-lg md:max-w-3xl mx-auto overflow-hidden">
                 <main className="flex-1 flex flex-col pb-16 overflow-hidden">
                   {children}
                 </main>

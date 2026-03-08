@@ -31,7 +31,7 @@ export async function generateMetadata({
   const game = await fetchGameDetail(params.id, searchParams.league);
 
   if (!game) {
-    return { title: 'Game | Play-O-Graph' };
+    return { title: 'Game' };
   }
 
   const away = game.awayTeam.abbreviation;
@@ -40,9 +40,9 @@ export async function generateMetadata({
 
   let title: string;
   if (game.status === 'final' || game.status === 'live') {
-    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'} | Play-O-Graph`;
+    title = `${away} ${game.awayScore}, ${home} ${game.homeScore} · ${game.status === 'final' ? 'Final' : 'Live'}`;
   } else {
-    title = `${away} @ ${home} | Play-O-Graph`;
+    title = `${away} @ ${home}`;
   }
 
   return {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { Game } from '@/lib/types';
 import GameCard from './GameCard';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -33,7 +32,7 @@ export default function LeagueSection({
   const liveCount = games.filter((g) => g.status === 'live').length;
   const badgeLabel = abbr ?? name.slice(0, 3).toUpperCase();
 
-  const STATUS_ORDER: Record<string, number> = { live: 0, scheduled: 1, final: 2, postponed: 3, delayed: 3 };
+  const STATUS_ORDER: Record<string, number> = { live: 0, delayed: 0, scheduled: 1, final: 2, postponed: 3 };
   const filteredGames =
     showTop25Filter && top25Only
       ? games.filter(

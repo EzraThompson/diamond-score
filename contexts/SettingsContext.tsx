@@ -12,6 +12,7 @@ export interface AppSettings {
   theme: 'light' | 'dark';
   clutchStyle: ClutchStyle;
   scoreAnimation: ScoreAnimation;
+  slotOrder: string[];
 }
 
 const DEFAULTS: AppSettings = {
@@ -20,6 +21,7 @@ const DEFAULTS: AppSettings = {
   theme: 'light',
   clutchStyle: 'dramatic',
   scoreAnimation: 'flip',
+  slotOrder: [],
 };
 
 interface SettingsContextValue {

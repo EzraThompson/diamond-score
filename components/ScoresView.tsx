@@ -7,6 +7,7 @@ import type { LeagueGroup, ScoresResult } from '@/lib/buildScores';
 import { useLiveStream } from '@/hooks/useLiveStream';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { SLOT_LIST, getOrderedSlots } from '@/lib/slots';
 import { useToast } from './Toast';
 import Header from './Header';
 import DateStrip from './DateStrip';
@@ -15,21 +16,8 @@ import FollowingSection from './FollowingSection';
 import ErrorBoundary from './ErrorBoundary';
 import { LeagueSkeleton } from './GameCardSkeleton';
 
-// ── Slot configuration (display order) ──────────────────────────────────────
-
-const SCORE_SLOTS = [
-  { key: 'wbc',  endpoint: '/api/scores/wbc',  skeletonName: 'WBC',              skeletonCount: 2 },
-  { key: 'mlb',  endpoint: '/api/scores/mlb',  skeletonName: 'MLB',              skeletonCount: 3 },
-  { key: 'milb', endpoint: '/api/scores/milb', skeletonName: 'MiLB',             skeletonCount: 2 },
-  { key: 'npb',  endpoint: '/api/scores/npb',  skeletonName: 'NPB',              skeletonCount: 2 },
-  { key: 'kbo',  endpoint: '/api/scores/kbo',  skeletonName: 'KBO',              skeletonCount: 2 },
-  { key: 'ncaa', endpoint: '/api/scores/ncaa', skeletonName: 'College Baseball',  skeletonCount: 2 },
-] as const;
-
-type SlotKey = (typeof SCORE_SLOTS)[number]['key'];
-
 // Map league IDs → slot key so SSE init data can be distributed
-const LEAGUE_ID_TO_SLOT: Record<number, SlotKey> = {
+const LEAGUE_ID_TO_SLOT: Record<number, string> = {
   20: 'wbc',
   1:  'mlb',
   11: 'milb', 12: 'milb', 13: 'milb', 14: 'milb',
@@ -44,12 +32,12 @@ interface SlotData {
   error: boolean;
 }
 
-type SlotsState = Record<SlotKey, SlotData>;
+type SlotsState = Record<string, SlotData>;
 
 const makeInitialSlots = (): SlotsState =>
   Object.fromEntries(
-    SCORE_SLOTS.map((s) => [s.key, { loading: true, leagues: [], error: false }]),
-  ) as unknown as SlotsState;
+    SLOT_LIST.map((s) => [s.key, { loading: true, leagues: [], error: false }]),
+  ) as SlotsState;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -70,7 +58,7 @@ export default function ScoresView() {
   // ── Per-slot fetch ────────────────────────────────────────────────────────
 
   const fetchSlot = useCallback(
-    (slotKey: SlotKey, endpoint: string) => {
+    (slotKey: string, endpoint: string) => {
       fetch(`${endpoint}?date=${dateStr}`, { cache: 'no-store' })
         .then((r) => {
           if (!r.ok) throw new Error(`${r.status}`);
@@ -96,7 +84,7 @@ export default function ScoresView() {
   const fetchAllSlots = useCallback(
     (showLoading = false) => {
       if (showLoading) setSlots(makeInitialSlots());
-      for (const slot of SCORE_SLOTS) {
+      for (const slot of SLOT_LIST) {
         fetchSlot(slot.key, slot.endpoint);
       }
     },
@@ -117,16 +105,16 @@ export default function ScoresView() {
 
   // SSE init: distribute full ScoresResult into slots (used on reconnect)
   const handleInit = useCallback((newData: ScoresResult) => {
-    const slotLeagues: Record<SlotKey, LeagueGroup[]> = {
-      wbc: [], mlb: [], milb: [], npb: [], kbo: [], ncaa: [],
-    };
+    const slotLeagues: Record<string, LeagueGroup[]> = Object.fromEntries(
+      SLOT_LIST.map((s) => [s.key, []]),
+    );
     for (const league of newData.leagues) {
       const slotKey = LEAGUE_ID_TO_SLOT[league.id];
-      if (slotKey) slotLeagues[slotKey].push(league);
+      if (slotKey && slotLeagues[slotKey]) slotLeagues[slotKey].push(league);
     }
     setSlots(
       Object.fromEntries(
-        SCORE_SLOTS.map((s) => [s.key, { loading: false, leagues: slotLeagues[s.key], error: false }]),
+        SLOT_LIST.map((s) => [s.key, { loading: false, leagues: slotLeagues[s.key], error: false }]),
       ) as SlotsState,
     );
     setLastSync(new Date());
@@ -137,7 +125,7 @@ export default function ScoresView() {
     const byId = new Map(changedGames.map((g) => [g.id, g]));
     setSlots((prev) => {
       const next = { ...prev };
-      for (const slotKey of Object.keys(next) as SlotKey[]) {
+      for (const slotKey of Object.keys(next)) {
         const slot = next[slotKey];
         const updatedLeagues = slot.leagues.map((l) => ({
           ...l,
@@ -165,15 +153,25 @@ export default function ScoresView() {
     let didPull = false;
 
     function onTouchStart(e: TouchEvent) {
-      if (el!.scrollTop === 0) {
+      // Only allow pull-to-refresh when already scrolled to the very top
+      // and user starts a fresh downward drag (not mid-scroll momentum)
+      if (el!.scrollTop <= 0) {
         startY = e.touches[0].clientY;
         canPull = true;
         didPull = false;
+      } else {
+        canPull = false;
       }
     }
 
     function onTouchMove(e: TouchEvent) {
       if (!canPull) return;
+      // If the container scrolled away from top during this gesture,
+      // the user is scrolling up — cancel pull-to-refresh
+      if (el!.scrollTop > 0) {
+        canPull = false;
+        return;
+      }
       const dy = e.touches[0].clientY - startY;
       if (dy > 80 && !didPull) {
         didPull = true;
@@ -205,12 +203,13 @@ export default function ScoresView() {
 
   // ── Derived state ─────────────────────────────────────────────────────────
 
-  const allLeagues = SCORE_SLOTS.flatMap((s) => slots[s.key].leagues);
+  const orderedSlots = getOrderedSlots(settings.slotOrder);
+  const allLeagues = orderedSlots.flatMap((s) => slots[s.key]?.leagues ?? []);
   const visibleLeagues = allLeagues.filter((l) => !settings.hiddenLeagues.includes(l.id));
   const hasLive = allLeagues.some((l) => l.games.some((g) => g.status === 'live'));
-  const allLoaded = SCORE_SLOTS.every((s) => !slots[s.key].loading);
+  const allLoaded = SLOT_LIST.every((s) => !slots[s.key]?.loading);
   const totalGames = visibleLeagues.reduce((sum, l) => sum + l.games.length, 0);
-  const anyLoaded = SCORE_SLOTS.some((s) => !slots[s.key].loading);
+  const anyLoaded = SLOT_LIST.some((s) => !slots[s.key]?.loading);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -227,7 +226,7 @@ export default function ScoresView() {
       )}
 
       {/* Content */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable', overscrollBehaviorY: 'contain' }}>
+      <div ref={containerRef} className="flex-1 overflow-y-auto pt-2 pb-4" style={{ scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}>
         {/* No games today (all loaded, nothing scheduled) */}
         {allLoaded && totalGames === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-2">
@@ -245,41 +244,48 @@ export default function ScoresView() {
         )}
 
         {/* Per-slot: skeleton while loading, leagues when ready */}
-        {SCORE_SLOTS.map((slotConfig) => {
-          const slot = slots[slotConfig.key];
+        {(() => {
+          let firstExpanded = false;
+          return orderedSlots.map((slotConfig) => {
+            const slot = slots[slotConfig.key];
 
-          if (slot.loading) {
+            if (slot.loading) {
+              return (
+                <LeagueSkeleton
+                  key={`skeleton-${slotConfig.key}`}
+                  name={slotConfig.skeletonName}
+                  count={slotConfig.skeletonCount}
+                />
+              );
+            }
+
+            const slotLeagues = slot.leagues.filter((l) => !settings.hiddenLeagues.includes(l.id));
+            if (slotLeagues.length === 0) return null;
+
             return (
-              <LeagueSkeleton
-                key={`skeleton-${slotConfig.key}`}
-                name={slotConfig.skeletonName}
-                count={slotConfig.skeletonCount}
-              />
+              <Fragment key={slotConfig.key}>
+                {slotLeagues.map((league) => {
+                  const autoExpand = !firstExpanded && league.games.length > 0;
+                  if (autoExpand) firstExpanded = true;
+                  return (
+                    <ErrorBoundary key={league.id} label={league.name}>
+                      <LeagueSection
+                        name={league.name}
+                        abbr={league.abbr}
+                        logoUrl={league.logoUrl}
+                        games={league.games}
+                        defaultCollapsed={autoExpand ? false : league.defaultCollapsed}
+                        showTop25Filter={league.showTop25Filter}
+                        error={league.error}
+                        stale={league.stale}
+                      />
+                    </ErrorBoundary>
+                  );
+                })}
+              </Fragment>
             );
-          }
-
-          const slotLeagues = slot.leagues.filter((l) => !settings.hiddenLeagues.includes(l.id));
-          if (slotLeagues.length === 0) return null;
-
-          return (
-            <Fragment key={slotConfig.key}>
-              {slotLeagues.map((league) => (
-                <ErrorBoundary key={league.id} label={league.name}>
-                  <LeagueSection
-                    name={league.name}
-                    abbr={league.abbr}
-                    logoUrl={league.logoUrl}
-                    games={league.games}
-                    defaultCollapsed={league.defaultCollapsed}
-                    showTop25Filter={league.showTop25Filter}
-                    error={league.error}
-                    stale={league.stale}
-                  />
-                </ErrorBoundary>
-              ))}
-            </Fragment>
-          );
-        })}
+          });
+        })()}
 
         {/* Sync indicator */}
         <div className="text-center text-[10px] text-gray-600 py-2">

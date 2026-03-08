@@ -452,16 +452,18 @@ function CardContent({
 
       {/* Expand hint */}
       {(game.status === 'live' || game.status === 'final') && game.linescore?.length && !spoilerActive && (
-        <div className="flex justify-center" data-expand="true">
-          <svg
-            className={`w-3.5 h-3.5 text-gray-300 transition-transform ${expanded ? 'rotate-180' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+        <div className="flex justify-center -mb-1" data-expand="true">
+          <div className="px-4 py-1.5 cursor-pointer" data-expand="true">
+            <svg
+              className={`w-5 h-5 text-gray-300 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
         </div>
       )}
     </div>

@@ -31,6 +31,10 @@ export default function DateStrip({ selected, onSelect }: DateStripProps) {
     <div
       ref={scrollRef}
       className="flex gap-1 px-4 py-2 overflow-x-auto no-scrollbar bg-surface-100 border-b border-surface-200"
+      style={{
+        maskImage: 'linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)',
+      }}
     >
       {days.map((day) => {
         const active = isSameDay(day, selected);

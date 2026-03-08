@@ -131,12 +131,16 @@ interface MLBBoxscorePlayer {
   stats: {
     batting?: {
       atBats?: number; runs?: number; hits?: number; rbi?: number;
-      baseOnBalls?: number; strikeOuts?: number; avg?: string;
+      baseOnBalls?: number; strikeOuts?: number;
     };
     pitching?: {
       inningsPitched?: string; hits?: number; runs?: number; earnedRuns?: number;
-      baseOnBalls?: number; strikeOuts?: number; era?: string; note?: string;
+      baseOnBalls?: number; strikeOuts?: number; note?: string;
     };
+  };
+  seasonStats?: {
+    batting?: { avg?: string };
+    pitching?: { era?: string };
   };
   battingOrder?: string;
 }
@@ -246,7 +250,7 @@ function parseBatters(team: MLBBoxscoreTeam): BatterLine[] {
       rbi: b.rbi ?? 0,
       bb: b.baseOnBalls ?? 0,
       so: b.strikeOuts ?? 0,
-      avg: b.avg ?? '---',
+      avg: p.seasonStats?.batting?.avg ?? '---',
     } satisfies BatterLine;
   }).filter(Boolean) as BatterLine[];
 }
@@ -266,7 +270,7 @@ function parsePitchers(team: MLBBoxscoreTeam): PitcherLine[] {
       er: pi.earnedRuns ?? 0,
       bb: pi.baseOnBalls ?? 0,
       so: pi.strikeOuts ?? 0,
-      era: pi.era ?? '-.--',
+      era: p.seasonStats?.pitching?.era ?? '-.--',
       note: pi.note,
     } satisfies PitcherLine;
   }).filter(Boolean) as PitcherLine[];
@@ -439,7 +443,7 @@ export async function fetchScheduleGames(
         tvNetworks: g.broadcasts?.map((b) => b.name),
       };
 
-      if (status === 'live') {
+      if (status === 'live' || status === 'delayed') {
         try {
           await enrichLiveGame(game);
         } catch {
@@ -451,7 +455,7 @@ export async function fetchScheduleGames(
     }
   }
 
-  const hasLive = games.some((g) => g.status === 'live');
+  const hasLive = games.some((g) => g.status === 'live' || g.status === 'delayed');
   // Live games: 30s TTL so scores refresh frequently.
   // No live games: 2-min TTL so we catch game start promptly (not 15min scheduleCache).
   gameCache.set(cacheKey, games, hasLive ? 30 : 120);
@@ -725,7 +729,7 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
     if (awayNav.next) detail.nextGameAway = awayNav.next;
   }
 
-  const ttl = detail.status === 'live' ? 30 : 300;
+  const ttl = detail.status === 'live' || detail.status === 'delayed' ? 10 : 300;
   gameCache.set(cacheKey, detail, ttl);
 
   return detail;
