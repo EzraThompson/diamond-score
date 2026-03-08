@@ -273,12 +273,10 @@ function CardContent({
   clutchStyle,
   scoreAnimation,
   isLive,
-  isFinal,
   isScheduled,
   homeWon,
   awayWon,
   spoilerActive,
-  spoilerRevealed,
   setSpoilerRevealed,
   expanded,
   setExpanded,
@@ -289,12 +287,10 @@ function CardContent({
   clutchStyle: ClutchStyle;
   scoreAnimation: ScoreAnimation;
   isLive: boolean;
-  isFinal: boolean;
   isScheduled: boolean;
   homeWon: boolean;
   awayWon: boolean;
   spoilerActive: boolean;
-  spoilerRevealed: boolean;
   setSpoilerRevealed: (v: boolean) => void;
   expanded: boolean;
   setExpanded: (fn: (v: boolean) => boolean) => void;
@@ -493,8 +489,8 @@ export default function GameCard({ game }: { game: Game }) {
 
   const contentProps = {
     game, leverage, clutchStyle, scoreAnimation,
-    isLive, isFinal, isScheduled, homeWon, awayWon,
-    spoilerActive, spoilerRevealed, setSpoilerRevealed,
+    isLive, isScheduled, homeWon, awayWon,
+    spoilerActive, setSpoilerRevealed,
     expanded, setExpanded, router,
   };
 
