@@ -369,13 +369,20 @@ async function getKBOTeamRecords(): Promise<RecordMap> {
   const records: RecordMap = {};
   const seasonId = new Date().getFullYear();
 
-  // Try the most likely standings endpoint
-  try {
-    const rows = await kboPost<KBORankRaw[]>(
-      '/ws/Record.asmx/GetTeamRank',
-      { leId: '1', srId: '1', seasonId: String(seasonId) },
-    );
-    for (const row of rows ?? []) {
+  // Extract rows from a KBO standings response, which may be an array directly
+  // or wrapped in an object (e.g. {d: [...]}).
+  function extractRows(data: unknown): KBORankRaw[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') {
+      for (const val of Object.values(data as Record<string, unknown>)) {
+        if (Array.isArray(val)) return val;
+      }
+    }
+    return [];
+  }
+
+  function parseStandings(rows: KBORankRaw[]) {
+    for (const row of rows) {
       const code = row.TEAM_ID;
       const meta = code ? TEAM_BY_CODE[code] : undefined;
       if (!meta) continue;
@@ -385,23 +392,23 @@ async function getKBOTeamRecords(): Promise<RecordMap> {
         records[meta.abbreviation] = { wins, losses };
       }
     }
+  }
+
+  // Try the most likely standings endpoint
+  try {
+    const data = await kboPost<unknown>(
+      '/ws/Record.asmx/GetTeamRank',
+      { leId: '1', srId: '1', seasonId: String(seasonId) },
+    );
+    parseStandings(extractRows(data));
   } catch {
     // Endpoint may not exist or season hasn't started — try alternate
     try {
-      const rows = await kboPost<KBORankRaw[]>(
+      const data = await kboPost<unknown>(
         '/ws/Main.asmx/GetTeamRank',
         { leId: '1', srId: '1', seasonId: String(seasonId) },
       );
-      for (const row of rows ?? []) {
-        const code = row.TEAM_ID;
-        const meta = code ? TEAM_BY_CODE[code] : undefined;
-        if (!meta) continue;
-        const wins   = parseInt(String(row.W_CN  ?? ''), 10);
-        const losses = parseInt(String(row.L_CN  ?? ''), 10);
-        if (!isNaN(wins) && !isNaN(losses)) {
-          records[meta.abbreviation] = { wins, losses };
-        }
-      }
+      parseStandings(extractRows(data));
     } catch (err) {
       console.error('KBO standings fetch failed:', err);
     }
