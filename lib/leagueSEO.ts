@@ -1,3 +1,5 @@
+import type { Game } from './types';
+
 export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://play-o-graph.com';
 
 export interface LeagueSEOConfig {
@@ -25,6 +27,28 @@ export function leagueJsonLd(league: LeagueSEOConfig) {
     },
     url: `${SITE_URL}/${league.slug}`,
   };
+}
+
+/** Format today's date for page titles (e.g. "March 14, 2026") */
+export function todayFormatted(): string {
+  return new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/** Generate SportsEvent JSON-LD array from a list of games */
+export function gamesJsonLd(games: Game[]) {
+  return games.map((g) => ({
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${g.awayTeam.name ?? g.awayTeam.abbreviation} at ${g.homeTeam.name ?? g.homeTeam.abbreviation}`,
+    sport: 'Baseball',
+    startDate: g.scheduledTime,
+    homeTeam: { '@type': 'SportsTeam', name: g.homeTeam.name ?? g.homeTeam.abbreviation },
+    awayTeam: { '@type': 'SportsTeam', name: g.awayTeam.name ?? g.awayTeam.abbreviation },
+  }));
 }
 
 export const LEAGUE_SEO: Record<string, LeagueSEOConfig> = {

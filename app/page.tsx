@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import ScoresView from '@/components/ScoresView';
+import { fetchAllLeagueScores } from '@/lib/fetchLeagueScores';
+
+export const revalidate = 30;
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://play-o-graph.com';
 
@@ -16,7 +19,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ScoresPage() {
+export default async function ScoresPage() {
+  const initialSlots = await fetchAllLeagueScores();
+
   return (
     <>
       <article className="sr-only">
@@ -36,7 +41,7 @@ export default function ScoresPage() {
           </ul>
         </nav>
       </article>
-      <ScoresView />
+      <ScoresView initialSlots={initialSlots} />
     </>
   );
 }

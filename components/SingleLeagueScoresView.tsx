@@ -11,6 +11,7 @@ import LeagueSection from './LeagueSection';
 import FollowingSection from './FollowingSection';
 import ErrorBoundary from './ErrorBoundary';
 import { LeagueSkeleton } from './GameCardSkeleton';
+import LeagueAbout from './LeagueAbout';
 
 interface SlotConfig {
   key: string;
@@ -22,9 +23,10 @@ interface SlotConfig {
 interface Props {
   slots: SlotConfig[];
   initialLeagues?: LeagueGroup[];
+  leagueSlug?: string;
 }
 
-export default function SingleLeagueScoresView({ slots, initialLeagues }: Props) {
+export default function SingleLeagueScoresView({ slots, initialLeagues, leagueSlug }: Props) {
   const hasInitial = !!initialLeagues?.length;
   const [date, setDate] = useState(() => new Date());
   const [loading, setLoading] = useState(!hasInitial);
@@ -32,6 +34,7 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
   const [lastSync, setLastSync] = useState<Date | null>(hasInitial ? new Date() : null);
   const [pulling, setPulling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const skipInitialFetch = useRef(hasInitial);
 
   const { favoriteTeams } = useFavorites();
   const { settings } = useSettings();
@@ -64,11 +67,16 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
   );
 
   useEffect(() => {
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     setLoading(true);
     setLeagues([]);
   }, [dateStr]);
 
   useEffect(() => {
+    if (skipInitialFetch.current) return;
     fetchAll();
   }, [fetchAll]);
 
@@ -178,6 +186,8 @@ export default function SingleLeagueScoresView({ slots, initialLeagues }: Props)
             <span>Updated {formatDistanceToNowStrict(lastSync, { addSuffix: true })}</span>
           ) : null}
         </div>
+
+        {leagueSlug && <LeagueAbout slug={leagueSlug} />}
       </div>
     </div>
   );

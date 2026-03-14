@@ -221,14 +221,31 @@ function parseLinescoreTable(tableJson: string): ParsedLinescore | undefined {
     const inningNum = parseInt(headerRow[col]?.Text ?? '', 10);
     if (isNaN(inningNum)) continue;
 
-    const awayText = awayRow[col]?.Text ?? '';
-    const homeText = homeRow[col]?.Text ?? '';
+    const awayText = (awayRow[col]?.Text ?? '').trim();
+    const homeText = (homeRow[col]?.Text ?? '').trim();
+
+    const away = awayText === '' || awayText === '-' ? null : (parseInt(awayText, 10) || 0);
+    const home = homeText === '' || homeText === '-' ? null : (parseInt(homeText, 10) || 0);
+
+    // Skip innings where neither team has a score (unplayed innings in KBO's fixed 12-column table)
+    if (away === null && home === null) continue;
 
     linescore.push({
       inning: inningNum,
-      away: awayText === '' || awayText === '-' ? null : (parseInt(awayText, 10) || 0),
-      home: homeText === '' || homeText === '-' ? null : (parseInt(homeText, 10) || 0),
+      away,
+      home,
     });
+  }
+
+  // KBO API returns a fixed 12-column table even for 9-inning games.
+  // Trim trailing innings beyond 9 where both teams scored 0 or null (unplayed padding).
+  while (linescore.length > 9) {
+    const last = linescore[linescore.length - 1];
+    if ((last.away ?? 0) === 0 && (last.home ?? 0) === 0) {
+      linescore.pop();
+    } else {
+      break;
+    }
   }
 
   // R, H, E are the last 3 columns; we only need H and E (R = total runs, already known)

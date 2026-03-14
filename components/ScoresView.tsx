@@ -34,20 +34,32 @@ interface SlotData {
 
 type SlotsState = Record<string, SlotData>;
 
-const makeInitialSlots = (): SlotsState =>
+const makeInitialSlots = (initial?: Record<string, LeagueGroup[]>): SlotsState =>
   Object.fromEntries(
-    SLOT_LIST.map((s) => [s.key, { loading: true, leagues: [], error: false }]),
+    SLOT_LIST.map((s) => {
+      const data = initial?.[s.key];
+      return [s.key, data?.length
+        ? { loading: false, leagues: data, error: false }
+        : { loading: true, leagues: [], error: false },
+      ];
+    }),
   ) as SlotsState;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function ScoresView() {
+interface ScoresViewProps {
+  initialSlots?: Record<string, LeagueGroup[]>;
+}
+
+export default function ScoresView({ initialSlots }: ScoresViewProps) {
+  const hasInitial = initialSlots && Object.values(initialSlots).some((l) => l.length > 0);
   const [date, setDate] = useState(() => new Date());
-  const [slots, setSlots] = useState<SlotsState>(makeInitialSlots);
+  const [slots, setSlots] = useState<SlotsState>(() => makeInitialSlots(initialSlots));
   const [pulling, setPulling] = useState(false);
-  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [lastSync, setLastSync] = useState<Date | null>(hasInitial ? new Date() : null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasShownConnectionError = useRef(false);
+  const skipInitialFetch = useRef(!!hasInitial);
 
   const { favoriteTeams } = useFavorites();
   const { settings } = useSettings();
@@ -93,11 +105,16 @@ export default function ScoresView() {
 
   // Reset + refetch on date change
   useEffect(() => {
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
     setSlots(makeInitialSlots());
     hasShownConnectionError.current = false;
   }, [dateStr]);
 
   useEffect(() => {
+    if (skipInitialFetch.current) return;
     fetchAllSlots();
   }, [fetchAllSlots]);
 
