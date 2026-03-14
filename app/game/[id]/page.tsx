@@ -15,6 +15,8 @@ async function fetchGameDetail(id: string, league?: string): Promise<GameDetail 
       next: { revalidate: 30 },
     });
     if (!res.ok) return null;
+    const ct = res.headers.get('content-type') ?? '';
+    if (!ct.includes('application/json')) return null;
     return res.json() as Promise<GameDetail>;
   } catch {
     return null;

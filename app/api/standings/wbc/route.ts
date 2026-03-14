@@ -103,6 +103,15 @@ function flattenGroups(groups: ESPNGroup[]): WBCPoolGroup[] {
 
     const rows = entries.map(parseEntry);
 
+    // Sort by wins desc, then pct desc, then run differential desc for tiebreakers
+    rows.sort((a, b) => {
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.pct !== a.pct) return b.pct - a.pct;
+      const rdA = (a.runsScored ?? 0) - (a.runsAllowed ?? 0);
+      const rdB = (b.runsScored ?? 0) - (b.runsAllowed ?? 0);
+      return rdB - rdA;
+    });
+
     // Normalize games back so the leader shows 0
     const minGB = Math.min(...rows.map((r) => r.gamesBack));
     for (const row of rows) row.gamesBack = Math.max(0, row.gamesBack - minGB);

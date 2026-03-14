@@ -868,6 +868,21 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
 
   useEffect(() => { fetchDetail(true); }, [fetchDetail]);
 
+  // Update browser tab title with team names and score
+  useEffect(() => {
+    if (!detail) return;
+    const away = detail.awayTeam.abbreviation;
+    const home = detail.homeTeam.abbreviation;
+    if (detail.status === 'final' || detail.status === 'live') {
+      const extra = detail.status === 'final' && detail.linescore && detail.linescore.length > 9
+        ? `/${detail.linescore.length}` : '';
+      const statusLabel = detail.status === 'final' ? `Final${extra}` : 'Live';
+      document.title = `${away} ${detail.awayScore}, ${home} ${detail.homeScore} · ${statusLabel} | Diamond Score`;
+    } else {
+      document.title = `${away} @ ${home} | Diamond Score`;
+    }
+  }, [detail]);
+
   useEffect(() => {
     if (detail?.status !== 'live' && detail?.status !== 'delayed') return;
     const timer = setInterval(() => fetchDetail(false), 5_000);
@@ -905,18 +920,18 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
         {tab === 'linescore' && <LinescoreTab detail={detail} />}
         {tab === 'boxscore' && <BoxScoreTab detail={detail} />}
         {tab === 'pbp' && <PlayByPlayTab plays={detail.plays ?? []} />}
-
-        <div className="flex justify-center py-4">
-          <button
-            onClick={() => setFeedbackOpen(true)}
-            className="text-[11px] text-gray-400 hover:text-gray-500 transition-colors"
-          >
-            Something look wrong?
-          </button>
-        </div>
       </div>
 
       <PrevNextNav detail={detail} />
+
+      <div className="flex justify-center py-4">
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="text-[11px] text-gray-400 hover:text-gray-500 transition-colors"
+        >
+          Something look wrong?
+        </button>
+      </div>
 
       <FeedbackModal
         open={feedbackOpen}

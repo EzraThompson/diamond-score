@@ -94,6 +94,7 @@ interface MLBStandingsRecord {
     wins: number;
     losses: number;
     winningPercentage: string;
+    divisionRank?: string;
     gamesBack: string;
     streak: { streakCode: string };
     records: {
@@ -134,7 +135,16 @@ export async function getMiLBStandings(
 
   for (const record of data.records ?? []) {
     if (!record.division?.name) continue;
-    for (const rec of record.teamRecords) {
+
+    // Sort by divisionRank (API tiebreaker order) then by win% as fallback
+    const sorted = [...record.teamRecords].sort((a, b) => {
+      const rankA = a.divisionRank ? parseInt(a.divisionRank) : 999;
+      const rankB = b.divisionRank ? parseInt(b.divisionRank) : 999;
+      if (rankA !== rankB) return rankA - rankB;
+      return parseFloat(b.winningPercentage) - parseFloat(a.winningPercentage);
+    });
+
+    for (const rec of sorted) {
       const last10 = rec.records?.splitRecords?.find((s) => s.type === 'lastTen');
       standings.push({
         team: {

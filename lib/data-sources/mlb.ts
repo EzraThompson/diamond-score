@@ -320,6 +320,9 @@ interface MLBStandingsResponse {
       wins: number;
       losses: number;
       winningPercentage: string;
+      divisionRank?: string;
+      leagueRank?: string;
+      wildCardRank?: string;
       gamesBack: string;
       wildCardGamesBack?: string;
       streak: { streakCode: string };
@@ -558,7 +561,15 @@ export async function getMLBStandings(season: number): Promise<Standing[]> {
   const standings: Standing[] = [];
 
   for (const division of data.records) {
-    for (const rec of division.teamRecords) {
+    // Sort by divisionRank (API tiebreaker order) then by win% as fallback
+    const sorted = [...division.teamRecords].sort((a, b) => {
+      const rankA = a.divisionRank ? parseInt(a.divisionRank) : 999;
+      const rankB = b.divisionRank ? parseInt(b.divisionRank) : 999;
+      if (rankA !== rankB) return rankA - rankB;
+      return parseFloat(b.winningPercentage) - parseFloat(a.winningPercentage);
+    });
+
+    for (const rec of sorted) {
       const last10 = rec.records.splitRecords.find((s) => s.type === 'lastTen');
 
       standings.push({
@@ -587,7 +598,7 @@ export async function getMLBStandings(season: number): Promise<Standing[]> {
 
 /**
  * Fetch wild card standings grouped by league (AL / NL).
- * Each team gets a `wildCardGamesBack` value and is sorted by W%.
+ * Each team gets a `wildCardGamesBack` value and is sorted by wildCardRank.
  */
 export async function getMLBWildCardStandings(season: number): Promise<Standing[]> {
   const cacheKey = `mlb:wildcard:${season}`;
@@ -603,7 +614,16 @@ export async function getMLBWildCardStandings(season: number): Promise<Standing[
   for (const record of data.records) {
     // Wild card standings group by league, not division
     const leagueName = record.league?.name ?? record.division.name;
-    for (const rec of record.teamRecords) {
+
+    // Sort by wildCardRank (API tiebreaker order) then by win% as fallback
+    const sorted = [...record.teamRecords].sort((a, b) => {
+      const rankA = a.wildCardRank ? parseInt(a.wildCardRank) : (a.leagueRank ? parseInt(a.leagueRank) : 999);
+      const rankB = b.wildCardRank ? parseInt(b.wildCardRank) : (b.leagueRank ? parseInt(b.leagueRank) : 999);
+      if (rankA !== rankB) return rankA - rankB;
+      return parseFloat(b.winningPercentage) - parseFloat(a.winningPercentage);
+    });
+
+    for (const rec of sorted) {
       const last10 = rec.records.splitRecords.find((s) => s.type === 'lastTen');
       const wcgb = rec.wildCardGamesBack
         ? (rec.wildCardGamesBack === '-' ? 0 : parseFloat(rec.wildCardGamesBack))

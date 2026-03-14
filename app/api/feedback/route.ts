@@ -29,8 +29,16 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ id: feedback.id }, { status: 201 });
-  } catch (err) {
-    console.error('Feedback POST error:', err);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('Feedback POST error:', errMsg, err);
+    // Check for common Prisma/DB issues
+    if (errMsg.includes('does not exist') || errMsg.includes('relation')) {
+      return NextResponse.json(
+        { error: 'Database table not ready. Please try again in a moment.' },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: 'Failed to save feedback' }, { status: 500 });
   }
 }
