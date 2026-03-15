@@ -20,7 +20,6 @@ import type {
   PlayEvent,
   PlayerInfo,
   RunnersOn,
-  ScheduleNavGame,
   Standing,
   Team,
 } from '../types';
@@ -655,59 +654,6 @@ export async function getMLBWildCardStandings(season: number): Promise<Standing[
 }
 
 /**
- * Fetch prev/next games for a team around a given game.
- * Used to power prev/next navigation in the game detail view.
- * Cached 5 minutes.
- */
-async function getMLBTeamScheduleWindow(
-  teamId: number,
-  gamePk: number,
-  gameDate: string,
-): Promise<{ prev: ScheduleNavGame | null; next: ScheduleNavGame | null }> {
-  const cacheKey = `mlb:teamwindow:${teamId}:${gamePk}`;
-  const cached = gameCache.get<{ prev: ScheduleNavGame | null; next: ScheduleNavGame | null }>(cacheKey);
-  if (cached) return cached;
-
-  // ±30 day window around the game date
-  const center = new Date(gameDate + 'T12:00:00Z');
-  const startMs = center.getTime() - 30 * 24 * 60 * 60 * 1000;
-  const endMs   = center.getTime() + 30 * 24 * 60 * 60 * 1000;
-  const startStr = new Date(startMs).toISOString().slice(0, 10);
-  const endStr   = new Date(endMs).toISOString().slice(0, 10);
-
-  const data = await mlbFetch<MLBScheduleResponse>(
-    `${MLB_API}/schedule?teamId=${teamId}&startDate=${startStr}&endDate=${endStr}&sportId=1&hydrate=team`,
-  );
-
-  const allGames: ScheduleNavGame[] = [];
-
-  for (const dateEntry of data.dates ?? []) {
-    for (const g of dateEntry.games) {
-      const isHome = g.teams.home.team.id === teamId;
-      const opponentTeam = isHome ? g.teams.away.team : g.teams.home.team;
-      allGames.push({
-        id: g.gamePk,
-        date: dateEntry.date,
-        opponent: opponentTeam.abbreviation ?? opponentTeam.name.slice(0, 3).toUpperCase(),
-        homeOrAway: isHome ? 'home' : 'away',
-        status: mapStatus(g.status),
-      });
-    }
-  }
-
-  allGames.sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
-
-  const idx = allGames.findIndex((g) => g.id === gamePk);
-  const result = {
-    prev: idx > 0 ? allGames[idx - 1] : null,
-    next: idx >= 0 && idx < allGames.length - 1 ? allGames[idx + 1] : null,
-  };
-
-  gameCache.set(cacheKey, result, 300);
-  return result;
-}
-
-/**
  * Shared helper: fetch the MLB Stats API live feed and build a GameDetail.
  * Reused by both MLB and WBC game detail functions.
  * The caller supplies the league and color map so the output is source-appropriate.
@@ -826,23 +772,6 @@ export async function getMLBGameDetail(gamePk: number): Promise<GameDetail> {
   const cacheKey = `mlb:detail:${gamePk}`;
 
   const detail = await fetchGameDetailFromLiveFeed(gamePk, MLB_LEAGUE, TEAM_COLORS);
-
-  // Fetch prev/next games for both teams (MLB-only, parallel)
-  const gameDate = detail.scheduledTime?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
-
-  const [homeNav, awayNav] = await Promise.all([
-    getMLBTeamScheduleWindow(detail.homeTeam.id, gamePk, gameDate).catch(() => null),
-    getMLBTeamScheduleWindow(detail.awayTeam.id, gamePk, gameDate).catch(() => null),
-  ]);
-
-  if (homeNav) {
-    if (homeNav.prev) detail.prevGameHome = homeNav.prev;
-    if (homeNav.next) detail.nextGameHome = homeNav.next;
-  }
-  if (awayNav) {
-    if (awayNav.prev) detail.prevGameAway = awayNav.prev;
-    if (awayNav.next) detail.nextGameAway = awayNav.next;
-  }
 
   const ttl = detail.status === 'live' || detail.status === 'delayed' ? 4 : 300;
   gameCache.set(cacheKey, detail, ttl);

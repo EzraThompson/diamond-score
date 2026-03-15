@@ -8,7 +8,7 @@ import TeamBadge from '@/components/TeamBadge';
 import FeedbackModal from '@/components/FeedbackModal';
 import StarButton from '@/components/StarButton';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import type { GameDetail, BatterLine, PitcherLine, Pitch, PlayEvent, ScheduleNavGame } from '@/lib/types';
+import type { GameDetail, BatterLine, PitcherLine, Pitch, PlayEvent } from '@/lib/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -759,86 +759,6 @@ function PlayByPlayTab({ plays }: { plays: PlayEvent[] }) {
   );
 }
 
-// ── Prev / Next game navigation ────────────────────────────────────────
-
-function NavChip({
-  teamAbbr,
-  game,
-  dir,
-}: {
-  teamAbbr: string;
-  game: ScheduleNavGame;
-  dir: 'prev' | 'next';
-}) {
-  const router = useRouter();
-  // Parse YYYY-MM-DD without timezone shifts
-  const [y, m, d] = game.date.split('-').map(Number);
-  const dateStr = format(new Date(y, m - 1, d), 'MMM d');
-
-  return (
-    <button
-      onClick={() => router.push(`/game/${game.id}`)}
-      className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-800 transition-colors min-w-0 max-w-[47%]"
-    >
-      {dir === 'prev' && (
-        <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      )}
-      <span className="truncate">
-        <span className="font-semibold">{teamAbbr}</span>
-        {' '}
-        <span className="text-gray-400">{dateStr} vs {game.opponent}</span>
-      </span>
-      {dir === 'next' && (
-        <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-function PrevNextNav({ detail }: { detail: GameDetail }) {
-  const hasHomeNav = detail.prevGameHome || detail.nextGameHome;
-  const hasAwayNav = detail.prevGameAway || detail.nextGameAway;
-
-  if (!hasHomeNav && !hasAwayNav) return null;
-
-  return (
-    <div className="border-t border-surface-200 bg-surface-50 px-4 py-2 flex-shrink-0">
-      {hasHomeNav && (
-        <div className="flex items-center justify-between py-1">
-          {detail.prevGameHome ? (
-            <NavChip teamAbbr={detail.homeTeam.abbreviation} game={detail.prevGameHome} dir="prev" />
-          ) : (
-            <div />
-          )}
-          {detail.nextGameHome ? (
-            <NavChip teamAbbr={detail.homeTeam.abbreviation} game={detail.nextGameHome} dir="next" />
-          ) : (
-            <div />
-          )}
-        </div>
-      )}
-      {hasAwayNav && (
-        <div className="flex items-center justify-between py-1">
-          {detail.prevGameAway ? (
-            <NavChip teamAbbr={detail.awayTeam.abbreviation} game={detail.prevGameAway} dir="prev" />
-          ) : (
-            <div />
-          )}
-          {detail.nextGameAway ? (
-            <NavChip teamAbbr={detail.awayTeam.abbreviation} game={detail.nextGameAway} dir="next" />
-          ) : (
-            <div />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Main view ──────────────────────────────────────────────────────────
 
 export default function GameDetailView({ id, leagueId }: { id: number; leagueId?: number }) {
@@ -921,8 +841,6 @@ export default function GameDetailView({ id, leagueId }: { id: number; leagueId?
         {tab === 'boxscore' && <BoxScoreTab detail={detail} />}
         {tab === 'pbp' && <PlayByPlayTab plays={detail.plays ?? []} />}
       </div>
-
-      <PrevNextNav detail={detail} />
 
       <div className="flex justify-center py-4">
         <button

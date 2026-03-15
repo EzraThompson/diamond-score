@@ -163,10 +163,6 @@ export interface GameDetail extends Game {
   currentAtBatPitches?: Pitch[];
   strikeZoneTop?: number;
   strikeZoneBottom?: number;
-  prevGameHome?: ScheduleNavGame;
-  nextGameHome?: ScheduleNavGame;
-  prevGameAway?: ScheduleNavGame;
-  nextGameAway?: ScheduleNavGame;
 }
 
 // ── Legacy aliases (used by existing components) ────────────────────
