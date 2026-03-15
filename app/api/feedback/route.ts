@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { createFeedback, listFeedback } from '@/lib/feedback-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,25 +20,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message too long' }, { status: 400 });
     }
 
-    const feedback = await prisma.feedback.create({
-      data: {
-        message: message.trim(),
-        page: page ?? null,
-        gameId: gameId ?? null,
-      },
-    });
-
+    const feedback = createFeedback(message.trim(), page, gameId);
     return NextResponse.json({ id: feedback.id }, { status: 201 });
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    console.error('Feedback POST error:', errMsg, err);
-    // Check for common Prisma/DB issues
-    if (errMsg.includes('does not exist') || errMsg.includes('relation')) {
-      return NextResponse.json(
-        { error: 'Database table not ready. Please try again in a moment.' },
-        { status: 503 },
-      );
-    }
+    console.error('Feedback POST error:', errMsg);
     return NextResponse.json({ error: 'Failed to save feedback' }, { status: 500 });
   }
 }
@@ -51,13 +37,8 @@ export async function GET(req: NextRequest) {
   }
 
   const resolved = new URL(req.url).searchParams.get('resolved');
-  const where = resolved === 'true' ? { resolved: true } : resolved === 'false' ? { resolved: false } : {};
+  const filter = resolved === 'true' ? { resolved: true } : resolved === 'false' ? { resolved: false } : undefined;
 
-  const items = await prisma.feedback.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
-
+  const items = listFeedback(filter);
   return NextResponse.json(items);
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { updateFeedback, deleteFeedback } from '@/lib/feedback-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +20,10 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const feedback = await prisma.feedback.update({
-      where: { id },
-      data: { resolved: Boolean(body.resolved) },
-    });
+    const feedback = updateFeedback(id, { resolved: Boolean(body.resolved) });
+    if (!feedback) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     return NextResponse.json(feedback);
   } catch {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -45,10 +45,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
-  try {
-    await prisma.feedback.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
-  } catch {
+  const deleted = deleteFeedback(id);
+  if (!deleted) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  return NextResponse.json({ ok: true });
 }
