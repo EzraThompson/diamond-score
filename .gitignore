@@ -40,3 +40,10 @@ next-env.d.ts
 
 # feedback data
 /data
+
+# Capacitor native build artifacts
+ios/App/Pods/
+ios/App/build/
+android/.gradle/
+android/app/build/
+android/build/
